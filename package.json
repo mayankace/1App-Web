@@ -1,0 +1,24 @@
+{
+  "name": "1App-booking",
+  "version": "1.0.0",
+  "description": "1App Service Booking Platform",
+  "private": true,
+  "scripts": {
+    "start": "node backend/src/server.js",
+    "server": "nodemon backend/src/server.js",
+    "client": "npm start --prefix frontend",
+    "admin": "npm start --prefix admin",
+    "dev": "concurrently \"npm run server\" \"npm run client\" \"npm run admin\"",
+    "dev-server": "concurrently \"npm run server\" \"npm run client\"",
+    "build": "npm run build --prefix frontend && npm run build --prefix admin",
+    "install-all": "npm install && npm install --prefix backend && npm install --prefix frontend && npm install --prefix admin",
+    "clean": "rmdir /s /q node_modules && rmdir /s /q backend\\node_modules && rmdir /s /q frontend\\node_modules && rmdir /s /q admin\\node_modules",
+    "seed": "node backend/src/seeders/seeder.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "dependencies": {
+    "axios": "^1.18.1"
+  }
+}
