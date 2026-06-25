@@ -16,16 +16,23 @@ const CategoryManagement = () => {
                 if (res.success) {
                     setServices(res.data.services);
                     
-                    // Count services per category
+                    // Count services and subcategories per category
                     const counts = {};
                     res.data.services.forEach(s => {
-                        counts[s.category] = (counts[s.category] || 0) + 1;
+                        if (!counts[s.category]) {
+                            counts[s.category] = { count: 0, subcategories: new Set() };
+                        }
+                        counts[s.category].count++;
+                        if (s.subcategory) {
+                            counts[s.category].subcategories.add(s.subcategory);
+                        }
                     });
 
                     // Build list of unique categories
                     const uniqueCats = Object.keys(counts).map(name => ({
                         name,
-                        count: counts[name]
+                        count: counts[name].count,
+                        subcategories: Array.from(counts[name].subcategories)
                     }));
                     setCategories(uniqueCats);
                 }
@@ -54,7 +61,7 @@ const CategoryManagement = () => {
                     <div key={idx} className="col-md-4">
                         <div className="card border-0 shadow-sm rounded-3 p-4 bg-white hover-shadow transition-all">
                             <div className="d-flex align-items-center justify-content-between mb-4">
-                                <div className="bg-warning-subtle text-warning rounded-circle p-3 d-inline-flex align-items-center justify-content-center" style={{ width: '56px', height: '56px' }}>
+                                <div className="bg-dark-subtle text-dark rounded-circle p-3 d-inline-flex align-items-center justify-content-center" style={{ width: '56px', height: '56px' }}>
                                     <FaFolderOpen size={24} />
                                 </div>
                                 <span className="badge bg-light text-primary border font-monospace px-3 py-2 fs-7 fw-bold">
@@ -62,7 +69,11 @@ const CategoryManagement = () => {
                                 </span>
                             </div>
                             <h4 className="fw-bold text-dark mb-1">{cat.name}</h4>
-                            <p className="text-muted small mb-0">Active section in client catalog</p>
+                            <div className="mt-3">
+                                {cat.subcategories.map(sub => (
+                                    <span key={sub} className="badge bg-light text-secondary border me-1 mb-1">{sub}</span>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 ))}

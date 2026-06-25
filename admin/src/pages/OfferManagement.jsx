@@ -48,7 +48,7 @@ const OfferManagement = () => {
                     <p className="text-muted">Configure active promotional coupons, service codes, and discount campaigns.</p>
                 </div>
                 {!showForm && (
-                    <button onClick={() => setShowForm(true)} className="btn btn-warning fw-bold d-flex align-items-center gap-2 px-4 shadow-sm">
+                    <button onClick={() => setShowForm(true)} className="btn btn-dark fw-bold d-flex align-items-center gap-2 px-4 shadow-sm">
                         <FaPlus />
                         <span>Create Coupon</span>
                     </button>
@@ -99,7 +99,7 @@ const OfferManagement = () => {
                             <button type="button" onClick={() => setShowForm(false)} className="btn btn-outline-secondary px-4 py-2">
                                 Cancel
                             </button>
-                            <button type="submit" className="btn btn-warning fw-bold px-4 py-2 shadow-sm">
+                            <button type="submit" className="btn btn-dark fw-bold px-4 py-2 shadow-sm">
                                 Create Coupon
                             </button>
                         </div>
@@ -110,7 +110,7 @@ const OfferManagement = () => {
             <div className="row g-4">
                 {offers.map((offer, idx) => (
                     <div key={idx} className="col-md-4">
-                        <div className="card border-0 shadow-sm rounded-3 p-4 bg-white hover-shadow transition-all border-top border-warning border-3">
+                        <div className="card border-0 shadow-sm rounded-3 p-4 bg-white hover-shadow transition-all border-top border-dark border-3">
                             <div className="d-flex align-items-center justify-content-between mb-3">
                                 <span className="badge bg-light text-primary border font-monospace px-3 py-1.5 fs-6 fw-bold">
                                     {offer.code}

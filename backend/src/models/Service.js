@@ -24,6 +24,11 @@ const serviceSchema = new mongoose.Schema({
         required: [true, 'Please provide service category'],
         trim: true
     },
+    subcategory: {
+        type: String,
+        required: [true, 'Please provide service subcategory'],
+        trim: true
+    },
     imageUrl: {
         type: String,
         default: ''

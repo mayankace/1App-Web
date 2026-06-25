@@ -6,11 +6,14 @@ const Service = require('../models/Service');
  */
 exports.getAllServices = async (req, res, next) => {
     try {
-        const { category, search } = req.query;
+        const { category, subcategory, search } = req.query;
         const query = { isActive: true };
 
         if (category) {
             query.category = category;
+        }
+        if (subcategory) {
+            query.subcategory = subcategory;
         }
 
         if (search) {
@@ -61,16 +64,33 @@ exports.getServiceById = async (req, res, next) => {
 };
 
 /**
- * @desc    Get unique service categories
+ * @desc    Get unique service categories and their subcategories
  * @route   GET /api/services/categories
  */
 exports.getCategories = async (req, res, next) => {
     try {
-        const categories = await Service.distinct('category', { isActive: true });
+        const categoriesData = await Service.aggregate([
+            { $match: { isActive: true } },
+            {
+                $group: {
+                    _id: '$category',
+                    subcategories: { $addToSet: '$subcategory' }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    category: '$_id',
+                    subcategories: 1
+                }
+            },
+            { $sort: { category: 1 } }
+        ]);
+        
         res.status(200).json({
             success: true,
             data: {
-                categories
+                categories: categoriesData
             }
         });
     } catch (err) {

@@ -20,7 +20,7 @@ code {
 
 .hover-shadow:hover {
   transform: translateY(-4px);
-  box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important;
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, .1) !important;
 }
 
 .hover-lift {
@@ -29,7 +29,8 @@ code {
 
 .hover-lift:hover {
   transform: translateY(-5px);
-  background-color: #fffbeb !important; /* warning light highlight */
+  background-color: #fffbeb !important;
+  /* warning light highlight */
 }
 
 /* Custom scrollbars */
@@ -97,4 +98,16 @@ code {
 
 .transition-all {
   transition: all 0.3s ease;
+}
+
+/* Hide scrollbar for horizontal scrollers */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  overflow-x: auto;
+  flex-wrap: nowrap;
 }

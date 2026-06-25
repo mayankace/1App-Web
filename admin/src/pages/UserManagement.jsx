@@ -52,7 +52,7 @@ const UserManagement = () => {
                                         <td className="font-monospace text-muted" style={{ fontSize: '0.8rem' }}>{user._id}</td>
                                         <td>
                                             <div className="d-flex align-items-center gap-2">
-                                                <div className="bg-warning-subtle text-warning rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px' }}>
+                                                <div className="bg-dark-subtle text-dark rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px' }}>
                                                     <FaUser size={14} />
                                                 </div>
                                                 <span className="fw-bold text-dark">{user.name}</span>
@@ -69,7 +69,7 @@ const UserManagement = () => {
                                                     <span>Verified</span>
                                                 </span>
                                             ) : (
-                                                <span className="badge bg-warning-subtle text-warning d-flex align-items-center gap-1 py-1 px-2.5" style={{ width: 'fit-content', fontSize: '0.75rem' }}>
+                                                <span className="badge bg-dark-subtle text-dark d-flex align-items-center gap-1 py-1 px-2.5" style={{ width: 'fit-content', fontSize: '0.75rem' }}>
                                                     <FaExclamationTriangle />
                                                     <span>Unverified</span>
                                                 </span>

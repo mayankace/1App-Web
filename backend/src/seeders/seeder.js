@@ -49,7 +49,8 @@ const seedData = async () => {
                 description: 'Comprehensive inspection of electrical wiring, circuit breakers, grounding systems, and outlets. Highly recommended for older structures to prevent hazards.',
                 price: 1499,
                 duration: 90,
-                category: 'Safety & Testing',
+                category: 'Home Service',
+                subcategory: 'Electrical Safety',
                 imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=400',
                 isActive: true
             },
@@ -58,7 +59,8 @@ const seedData = async () => {
                 description: 'Professional cable ducting and wiring installation using 1App fire-resistant low smoke (FRLS) wires. Price excludes materials.',
                 price: 199,
                 duration: 60,
-                category: 'Wiring & Cabling',
+                category: 'Home Service',
+                subcategory: 'Electrical Wiring',
                 imageUrl: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?auto=format&fit=crop&q=80&w=400',
                 isActive: true
             },
@@ -67,7 +69,8 @@ const seedData = async () => {
                 description: 'Upgrade your distribution board with high-quality MCBs, ELCBs, and phase selectors. Includes testing and safety certifications.',
                 price: 2499,
                 duration: 120,
-                category: 'Installation',
+                category: 'Home Service',
+                subcategory: 'Electrical Installation',
                 imageUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=400',
                 isActive: true
             },
@@ -76,7 +79,8 @@ const seedData = async () => {
                 description: 'Installation of a heavy-duty 16A power socket with dedicated wiring from the main distribution panel to secure appliance loads.',
                 price: 799,
                 duration: 45,
-                category: 'Installation',
+                category: 'Home Service',
+                subcategory: 'Appliance Installation',
                 imageUrl: 'https://images.unsplash.com/photo-1558224492-db896886cd53?auto=format&fit=crop&q=80&w=400',
                 isActive: true
             },
@@ -85,7 +89,8 @@ const seedData = async () => {
                 description: 'Priority troubleshooting and repair services for sudden electrical outages, trips, short-circuits, and wire burnouts.',
                 price: 1199,
                 duration: 60,
-                category: 'Repair & Troubleshooting',
+                category: 'Home Service',
+                subcategory: 'Emergency Repair',
                 imageUrl: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=400',
                 isActive: true
             },
@@ -94,7 +99,8 @@ const seedData = async () => {
                 description: 'Complete setup of domestic backup power systems, including inverter mountings, battery terminal configurations, and power source loops.',
                 price: 1899,
                 duration: 120,
-                category: 'Installation',
+                category: 'Home Service',
+                subcategory: 'Inverter & Battery',
                 imageUrl: 'https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&q=80&w=400',
                 isActive: true
             }

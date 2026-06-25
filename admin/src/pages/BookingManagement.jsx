@@ -79,7 +79,7 @@ const BookingManagement = () => {
 
     const getStatusBadge = (status) => {
         switch (status) {
-            case 'Pending': return 'bg-warning text-dark';
+            case 'Pending': return 'bg-dark text-dark';
             case 'Confirmed': return 'bg-info text-dark';
             case 'In Progress': return 'bg-primary text-light';
             case 'Completed': return 'bg-success text-light';
@@ -129,7 +129,7 @@ const BookingManagement = () => {
                     </div>
 
                     <div className="col-md-3">
-                        <button type="submit" className="btn btn-warning w-100 fw-bold">Apply Filter</button>
+                        <button type="submit" className="btn btn-dark w-100 fw-bold">Apply Filter</button>
                     </div>
                 </form>
             </div>
@@ -154,7 +154,7 @@ const BookingManagement = () => {
                                     </thead>
                                     <tbody>
                                         {bookings.map((booking) => (
-                                            <tr key={booking._id} className={selectedBooking?._id === booking._id ? 'table-warning-subtle' : ''}>
+                                            <tr key={booking._id} className={selectedBooking?._id === booking._id ? 'table-dark-subtle' : ''}>
                                                 <td>
                                                     <div className="fw-bold text-dark font-monospace" style={{ fontSize: '0.85rem' }}>{booking._id.substring(12)}...</div>
                                                     <small className="text-muted d-block">{booking.user?.name || 'N/A'}</small>
@@ -292,7 +292,7 @@ const BookingManagement = () => {
                                 <button 
                                     type="submit" 
                                     disabled={updating}
-                                    className="btn btn-warning w-100 fw-bold py-2.5 shadow-sm"
+                                    className="btn btn-dark w-100 fw-bold py-2.5 shadow-sm"
                                 >
                                     {updating ? 'Saving changes...' : 'Save Configuration'}
                                 </button>

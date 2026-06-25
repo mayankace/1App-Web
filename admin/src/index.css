@@ -18,8 +18,8 @@ code {
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-.table-warning-subtle {
-  background-color: #fff8e1 !important;
+.table-dark-subtle {
+  background-color: #f8f9fa !important;
 }
 
 /* Custom premium hover transitions */

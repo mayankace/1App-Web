@@ -16,7 +16,7 @@ const MainLayout = () => {
             {/* Sidebar */}
             <aside className="bg-dark text-light border-end" style={{ width: '260px', flexShrink: 0 }}>
                 <div className="p-4 border-bottom d-flex align-items-center gap-2">
-                    <FaTools className="text-warning" size={24} />
+                    <FaTools className="text-dark" size={24} />
                     <div>
                         <h5 className="fw-bold mb-0 text-white font-monospace">1App</h5>
                         <small className="text-muted tracking-wider text-uppercase font-monospace fs-8">Admin Control</small>
@@ -29,7 +29,7 @@ const MainLayout = () => {
                             <NavLink
                                 to="/"
                                 end
-                                className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-warning text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
+                                className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-dark text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
                             >
                                 <FaChartBar />
                                 <span>Dashboard</span>
@@ -38,7 +38,7 @@ const MainLayout = () => {
                         <li className="nav-item">
                             <NavLink
                                 to="/bookings"
-                                className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-warning text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
+                                className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-dark text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
                             >
                                 <FaTasks />
                                 <span>Bookings</span>
@@ -47,7 +47,7 @@ const MainLayout = () => {
                         <li className="nav-item">
                             <NavLink
                                 to="/services"
-                                className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-warning text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
+                                className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-dark text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
                             >
                                 <FaWrench />
                                 <span>Services</span>
@@ -56,7 +56,7 @@ const MainLayout = () => {
                         <li className="nav-item">
                             <NavLink
                                 to="/categories"
-                                className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-warning text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
+                                className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-dark text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
                             >
                                 <FaFolderOpen />
                                 <span>Categories</span>
@@ -65,7 +65,7 @@ const MainLayout = () => {
                         <li className="nav-item">
                             <NavLink
                                 to="/users"
-                                className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-warning text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
+                                className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-dark text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
                             >
                                 <FaUsers />
                                 <span>Users</span>
@@ -74,7 +74,7 @@ const MainLayout = () => {
                         <li className="nav-item">
                             <NavLink
                                 to="/offers"
-                                className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-warning text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
+                                className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-dark text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
                             >
                                 <FaTag />
                                 <span>Offers & Coupons</span>

@@ -43,6 +43,7 @@ const validateService = [
     body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
     body('duration').isInt({ min: 1 }).withMessage('Duration must be at least 1 minute'),
     body('category').trim().notEmpty().withMessage('Category is required'),
+    body('subcategory').trim().notEmpty().withMessage('Subcategory is required'),
     checkValidationResult
 ];
 

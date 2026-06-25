@@ -29,8 +29,8 @@ const Login = () => {
     return (
         <div className="min-vh-100 bg-light d-flex align-items-center justify-content-center">
             <div className="card shadow-lg border-0 rounded-4 overflow-hidden" style={{ width: '100%', maxWidth: '400px' }}>
-                <div className="bg-dark text-light p-4 text-center border-bottom border-warning border-3">
-                    <FaTools size={36} className="text-warning mb-2 animate-bounce" />
+                <div className="bg-dark text-light p-4 text-center border-bottom border-dark border-3">
+                    <FaTools size={36} className="text-dark mb-2 animate-bounce" />
                     <h3 className="fw-bold mb-1 font-monospace">1App ADMIN</h3>
                     <p className="text-muted mb-0 small">Enter credentials to access administrative dashboard</p>
                 </div>
@@ -70,7 +70,7 @@ const Login = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="btn btn-warning btn-lg w-100 fw-bold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow"
+                            className="btn btn-dark btn-lg w-100 fw-bold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow"
                         >
                             <FaSignInAlt />
                             <span>{loading ? 'Logging in...' : 'Enter Dashboard'}</span>

@@ -83,7 +83,7 @@ const Dashboard = () => {
                     <div className="card border-0 shadow-sm rounded-3 p-4 bg-white">
                         <div className="d-flex align-items-center justify-content-between mb-3">
                             <span className="text-muted small fw-bold text-uppercase">Pending Jobs</span>
-                            <div className="bg-warning-subtle text-warning rounded p-2"><FaHourglassHalf /></div>
+                            <div className="bg-dark-subtle text-dark rounded p-2"><FaHourglassHalf /></div>
                         </div>
                         <h3 className="fw-bold text-dark font-monospace mb-1">{statusCounts.Pending}</h3>
                         <span className="text-muted small">Awaiting technician assignment</span>
@@ -124,10 +124,10 @@ const Dashboard = () => {
                         <div className="d-flex flex-column gap-3">
                             <div className="d-flex justify-content-between align-items-center">
                                 <span className="text-muted d-flex align-items-center gap-2">
-                                    <span className="dot bg-warning" style={{ width: '10px', height: '10px', borderRadius: '50%' }}></span>
+                                    <span className="dot bg-dark" style={{ width: '10px', height: '10px', borderRadius: '50%' }}></span>
                                     <span>Pending Order Queue</span>
                                 </span>
-                                <span className="badge bg-warning text-dark fw-bold font-monospace">{statusCounts.Pending}</span>
+                                <span className="badge bg-dark text-dark fw-bold font-monospace">{statusCounts.Pending}</span>
                             </div>
                             <div className="d-flex justify-content-between align-items-center">
                                 <span className="text-muted d-flex align-items-center gap-2">

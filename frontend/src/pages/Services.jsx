@@ -13,6 +13,7 @@ const Services = () => {
     const [searchQuery, setSearchQuery] = useState('');
     
     const activeCategory = searchParams.get('category') || '';
+    const activeSubcategory = searchParams.get('subcategory') || '';
 
     useEffect(() => {
         // Fetch categories once on load
@@ -34,6 +35,7 @@ const Services = () => {
         try {
             const res = await serviceService.getAllServices({
                 category: activeCategory,
+                subcategory: activeSubcategory,
                 search: searchQuery
             });
             if (res.success) {
@@ -48,7 +50,7 @@ const Services = () => {
 
     useEffect(() => {
         fetchFilteredServices();
-    }, [activeCategory]);
+    }, [activeCategory, activeSubcategory]);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
@@ -58,8 +60,19 @@ const Services = () => {
     const handleCategoryClick = (category) => {
         if (category === '') {
             searchParams.delete('category');
+            searchParams.delete('subcategory');
         } else {
             searchParams.set('category', category);
+            searchParams.delete('subcategory'); // Reset subcategory when category changes
+        }
+        setSearchParams(searchParams);
+    };
+
+    const handleSubcategoryClick = (subcategory) => {
+        if (subcategory === '') {
+            searchParams.delete('subcategory');
+        } else {
+            searchParams.set('subcategory', subcategory);
         }
         setSearchParams(searchParams);
     };
@@ -67,6 +80,7 @@ const Services = () => {
     const handleClearFilters = () => {
         setSearchQuery('');
         searchParams.delete('category');
+        searchParams.delete('subcategory');
         setSearchParams(searchParams);
         // Force refresh directly
         setTimeout(() => {
@@ -95,7 +109,7 @@ const Services = () => {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <button type="submit" className="btn btn-warning px-4 fw-bold">Search</button>
+                        <button type="submit" className="btn btn-dark px-4 fw-bold">Search</button>
                         {(activeCategory || searchQuery) && (
                             <button 
                                 type="button" 
@@ -116,43 +130,88 @@ const Services = () => {
                         <div className="d-flex flex-column gap-2">
                             <button 
                                 onClick={() => handleCategoryClick('')}
-                                className={`btn text-start py-2 px-3 fw-medium rounded-3 ${!activeCategory ? 'btn-warning text-dark fw-bold' : 'btn-light text-muted'}`}
+                                className={`btn text-start py-2 px-3 fw-medium rounded-3 ${!activeCategory ? 'btn-dark text-white fw-bold' : 'btn-light text-muted'}`}
                             >
                                 All Services
                             </button>
-                            {categories.map((cat, idx) => (
-                                <button 
-                                    key={idx}
-                                    onClick={() => handleCategoryClick(cat)}
-                                    className={`btn text-start py-2 px-3 fw-medium rounded-3 ${activeCategory === cat ? 'btn-warning text-dark fw-bold' : 'btn-light text-muted'}`}
-                                >
-                                    {cat}
-                                </button>
-                            ))}
+                            {categories.map((catObj, idx) => {
+                                const catName = catObj.category;
+                                const isActiveCat = activeCategory === catName;
+                                return (
+                                    <div key={idx} className="d-flex flex-column gap-1">
+                                        <button 
+                                            onClick={() => handleCategoryClick(catName)}
+                                            className={`btn text-start py-2 px-3 fw-medium rounded-3 ${isActiveCat ? 'btn-dark text-white fw-bold' : 'btn-light text-muted'}`}
+                                        >
+                                            {catName}
+                                        </button>
+                                        {isActiveCat && catObj.subcategories && catObj.subcategories.length > 0 && (
+                                            <div className="ps-3 d-flex flex-column gap-1 mt-1 border-start ms-2">
+                                                <button
+                                                    onClick={() => handleSubcategoryClick('')}
+                                                    className={`btn btn-sm text-start py-1 px-2 fw-medium rounded-3 ${!activeSubcategory ? 'bg-secondary text-white' : 'text-muted hover-bg-light'}`}
+                                                >
+                                                    All in {catName}
+                                                </button>
+                                                {catObj.subcategories.map((sub, sIdx) => (
+                                                    <button
+                                                        key={sIdx}
+                                                        onClick={() => handleSubcategoryClick(sub)}
+                                                        className={`btn btn-sm text-start py-1 px-2 fw-medium rounded-3 ${activeSubcategory === sub ? 'bg-secondary text-white' : 'text-muted hover-bg-light'}`}
+                                                    >
+                                                        {sub}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
 
-                {/* 3. Right Column: Services Grid */}
+                {/* 3. Right Column: Services or Subcategories Grid */}
                 <div className="col-lg-9">
                     {loading ? (
                         <LoadingSpinner message="Searching services..." />
                     ) : (
                         <div>
-                            {services.length > 0 ? (
-                                <div className="row g-4">
-                                    {services.map((service) => (
-                                        <div key={service._id} className="col-md-6 col-lg-6">
-                                            <ServiceCard service={service} />
-                                        </div>
-                                    ))}
+                            {activeCategory && !activeSubcategory ? (
+                                <div>
+                                    <h4 className="fw-bold mb-4">Select a subcategory in {activeCategory}</h4>
+                                    <div className="row g-4">
+                                        {categories.find(c => c.category === activeCategory)?.subcategories.map((sub, idx) => (
+                                            <div key={idx} className="col-md-4">
+                                                <div 
+                                                    className="card border-0 shadow-sm rounded-4 p-4 text-center cursor-pointer hover-shadow transition-all bg-white h-100"
+                                                    onClick={() => handleSubcategoryClick(sub)}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    <h5 className="fw-bold text-dark mb-2">{sub}</h5>
+                                                    <p className="text-muted small mb-0">View all services</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : services.length > 0 ? (
+                                <div>
+                                    {activeSubcategory && <h4 className="fw-bold mb-4">{activeSubcategory} Services</h4>}
+                                    <div className="row g-4">
+                                        {services.map((service) => (
+                                            <div key={service._id} className="col-md-6 col-lg-6">
+                                                <ServiceCard service={service} />
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="text-center py-5 bg-white rounded-3 shadow-sm border p-4">
                                     <FaTimesCircle className="text-muted mb-3" size={48} />
                                     <h4 className="fw-bold text-dark">No Services Found</h4>
                                     <p className="text-muted">We couldn't find any services matching your filters. Try search keywords or different category filters.</p>
-                                    <button onClick={handleClearFilters} className="btn btn-warning fw-bold px-4 mt-2">
+                                    <button onClick={handleClearFilters} className="btn btn-dark fw-bold px-4 mt-2">
                                         View All Services
                                     </button>
                                 </div>

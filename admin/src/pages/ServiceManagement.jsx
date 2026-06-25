@@ -17,6 +17,7 @@ const ServiceManagement = () => {
     const [price, setPrice] = useState('');
     const [duration, setDuration] = useState('');
     const [category, setCategory] = useState('');
+    const [subcategory, setSubcategory] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [imageFile, setImageFile] = useState(null);
     const [submitting, setSubmitting] = useState(false);
@@ -50,6 +51,7 @@ const ServiceManagement = () => {
         setPrice('');
         setDuration('');
         setCategory('');
+        setSubcategory('');
         setImageUrl('');
         setImageFile(null);
         setShowForm(true);
@@ -62,6 +64,7 @@ const ServiceManagement = () => {
         setPrice(service.price);
         setDuration(service.duration);
         setCategory(service.category);
+        setSubcategory(service.subcategory || '');
         setImageUrl(service.imageUrl || '');
         setImageFile(null);
         setShowForm(true);
@@ -82,7 +85,7 @@ const ServiceManagement = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!name.trim() || !description.trim() || !price || !duration || !category.trim()) {
+        if (!name.trim() || !description.trim() || !price || !duration || !category.trim() || !subcategory.trim()) {
             toast.error('All fields are required!');
             return;
         }
@@ -95,6 +98,7 @@ const ServiceManagement = () => {
             formData.append('price', price);
             formData.append('duration', duration);
             formData.append('category', category);
+            formData.append('subcategory', subcategory);
 
             if (imageFile) {
                 formData.append('image', imageFile);
@@ -127,7 +131,7 @@ const ServiceManagement = () => {
                     <p className="text-muted">Register, edit, or remove 1App customer booking service items.</p>
                 </div>
                 {!showForm && (
-                    <button onClick={handleOpenCreate} className="btn btn-warning fw-bold d-flex align-items-center gap-2 px-4 shadow-sm">
+                    <button onClick={handleOpenCreate} className="btn btn-dark fw-bold d-flex align-items-center gap-2 px-4 shadow-sm">
                         <FaPlus />
                         <span>Add New Service</span>
                     </button>
@@ -165,8 +169,19 @@ const ServiceManagement = () => {
                                     onChange={(e) => setCategory(e.target.value)}
                                 />
                                 <datalist id="existing-categories">
-                                    {categories.map((cat, idx) => <option key={idx} value={cat} />)}
+                                    {categories.map((cat, idx) => <option key={idx} value={cat.category} />)}
                                 </datalist>
+                            </div>
+                            <div className="col-md-6">
+                                <label className="form-label text-muted small fw-bold">Subcategory</label>
+                                <input
+                                    type="text"
+                                    required
+                                    className="form-control bg-light border-0"
+                                    placeholder="Electrical Safety, Plumbing, etc."
+                                    value={subcategory}
+                                    onChange={(e) => setSubcategory(e.target.value)}
+                                />
                             </div>
                             <div className="col-md-6">
                                 <label className="form-label text-muted small fw-bold">Price (INR)</label>
@@ -236,7 +251,7 @@ const ServiceManagement = () => {
                             <button type="button" onClick={() => setShowForm(false)} className="btn btn-outline-secondary px-4 py-2">
                                 Cancel
                             </button>
-                            <button type="submit" disabled={submitting} className="btn btn-warning fw-bold px-4 py-2 shadow-sm">
+                            <button type="submit" disabled={submitting} className="btn btn-dark fw-bold px-4 py-2 shadow-sm">
                                 {submitting ? 'Saving...' : 'Save Configuration'}
                             </button>
                         </div>
@@ -256,6 +271,7 @@ const ServiceManagement = () => {
                                     <th>Image</th>
                                     <th>Service Name</th>
                                     <th>Category</th>
+                                    <th>Subcategory</th>
                                     <th>Cost / Duration</th>
                                     <th>Status</th>
                                     <th>Actions</th>
@@ -274,6 +290,7 @@ const ServiceManagement = () => {
                                         </td>
                                         <td className="fw-bold text-dark">{service.name}</td>
                                         <td><span className="badge bg-light text-secondary border text-uppercase" style={{ fontSize: '0.7rem' }}>{service.category}</span></td>
+                                        <td><span className="badge bg-light text-secondary border text-uppercase" style={{ fontSize: '0.7rem' }}>{service.subcategory}</span></td>
                                         <td>
                                             <div className="fw-bold text-primary">₹{service.price}</div>
                                             <small className="text-muted">{service.duration} mins</small>
