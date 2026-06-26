@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import BookingManagement from './pages/BookingManagement';
 import ServiceManagement from './pages/ServiceManagement';
 import CategoryManagement from './pages/CategoryManagement';
+import SubcategoryManagement from './pages/SubcategoryManagement';
 import UserManagement from './pages/UserManagement';
 import OfferManagement from './pages/OfferManagement';
 
@@ -31,8 +32,8 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         {/* Protected Dashboard Routes nested inside MainLayout */}
-        <Route 
-          path="/*" 
+        <Route
+          path="/*"
           element={
             <AdminPrivateRoute>
               <MainLayout />
@@ -43,6 +44,7 @@ function App() {
           <Route path="bookings" element={<BookingManagement />} />
           <Route path="services" element={<ServiceManagement />} />
           <Route path="categories" element={<CategoryManagement />} />
+          <Route path="subcategories" element={<SubcategoryManagement />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="offers" element={<OfferManagement />} />
         </Route>

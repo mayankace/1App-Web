@@ -6,9 +6,13 @@ const Service = require('../models/Service');
  */
 exports.getAllServices = async (req, res, next) => {
     try {
-        const { category, subcategory, search } = req.query;
+        const { serviceName, name, category, subcategory, search } = req.query;
         const query = { isActive: true };
+        const selectedServiceName = serviceName || name;
 
+        if (selectedServiceName) {
+            query.name = selectedServiceName;
+        }
         if (category) {
             query.category = category;
         }
@@ -19,11 +23,13 @@ exports.getAllServices = async (req, res, next) => {
         if (search) {
             query.$or = [
                 { name: { $regex: search, $options: 'i' } },
+                { category: { $regex: search, $options: 'i' } },
+                { subcategory: { $regex: search, $options: 'i' } },
                 { description: { $regex: search, $options: 'i' } }
             ];
         }
 
-        const services = await Service.find(query);
+        const services = await Service.find(query).sort({ name: 1, category: 1, subcategory: 1 });
 
         res.status(200).json({
             success: true,
@@ -64,7 +70,7 @@ exports.getServiceById = async (req, res, next) => {
 };
 
 /**
- * @desc    Get unique service categories and their subcategories
+ * @desc    Get unique service names, categories, and subcategories
  * @route   GET /api/services/categories
  */
 exports.getCategories = async (req, res, next) => {
@@ -73,20 +79,44 @@ exports.getCategories = async (req, res, next) => {
             { $match: { isActive: true } },
             {
                 $group: {
-                    _id: '$category',
+                    _id: {
+                        serviceName: '$name',
+                        category: '$category'
+                    },
                     subcategories: { $addToSet: '$subcategory' }
+                }
+            },
+            { $sort: { '_id.category': 1 } },
+            {
+                $group: {
+                    _id: '$_id.serviceName',
+                    categories: {
+                        $push: {
+                            category: '$_id.category',
+                            subcategories: '$subcategories'
+                        }
+                    }
                 }
             },
             {
                 $project: {
                     _id: 0,
+                    serviceName: '$_id',
+                    name: '$_id',
+                    categories: 1,
                     category: '$_id',
-                    subcategories: 1
+                    subcategories: {
+                        $map: {
+                            input: '$categories',
+                            as: 'item',
+                            in: '$$item.category'
+                        }
+                    }
                 }
             },
-            { $sort: { category: 1 } }
+            { $sort: { serviceName: 1 } }
         ]);
-        
+
         res.status(200).json({
             success: true,
             data: {
@@ -188,6 +218,44 @@ exports.deleteService = async (req, res, next) => {
         res.status(200).json({
             success: true,
             message: 'Service deleted successfully (deactivated)'
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * @desc    Get service hierarchy (service names -> categories -> subcategories)
+ * @route   GET /api/services/hierarchy
+ */
+exports.getServiceHierarchy = async (req, res, next) => {
+    try {
+        const services = await Service.find({ isActive: true });
+
+        const hierarchy = {};
+        services.forEach(service => {
+            if (!hierarchy[service.name]) {
+                hierarchy[service.name] = {
+                    categories: {}
+                };
+            }
+            if (service.category && service.category !== 'General') {
+                if (!hierarchy[service.name].categories[service.category]) {
+                    hierarchy[service.name].categories[service.category] = [];
+                }
+                if (service.subcategory && service.subcategory !== 'General') {
+                    if (!hierarchy[service.name].categories[service.category].includes(service.subcategory)) {
+                        hierarchy[service.name].categories[service.category].push(service.subcategory);
+                    }
+                }
+            }
+        });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                hierarchy
+            }
         });
     } catch (err) {
         next(err);

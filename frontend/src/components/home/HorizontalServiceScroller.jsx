@@ -16,7 +16,7 @@ const HorizontalServiceScroller = ({ title, subtitle, services }) => {
             <div className="d-flex gap-4 hide-scrollbar py-2" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 {services.map((service) => (
                     <div key={service._id} className="card border-0 shadow-sm rounded-4 text-start hover-shadow transition-all bg-white flex-shrink-0" style={{ width: '220px', cursor: 'pointer' }}>
-                        <Link to={`/services?category=${encodeURIComponent(service.category)}&subcategory=${encodeURIComponent(service.subcategory || '')}`} className="text-decoration-none text-dark">
+                        <Link to={`/services?serviceName=${encodeURIComponent(service.name)}&category=${encodeURIComponent(service.category)}&subcategory=${encodeURIComponent(service.subcategory || '')}`} className="text-decoration-none text-dark">
                             <div className="rounded-top-4 overflow-hidden" style={{ height: '140px', backgroundColor: '#f8f9fa' }}>
                                 {service.imageUrl ? (
                                     <img src={`http://localhost:5000${service.imageUrl}`} alt={service.name} className="w-100 h-100 object-fit-cover" />
@@ -25,7 +25,8 @@ const HorizontalServiceScroller = ({ title, subtitle, services }) => {
                                 )}
                             </div>
                             <div className="p-3">
-                                <h6 className="fw-bold mb-1 text-truncate">{service.name}</h6>
+                                <h6 className="fw-bold mb-1 text-truncate">{service.subcategory || service.name}</h6>
+                                <div className="text-muted small text-truncate mb-1">{service.name} / {service.category}</div>
                                 <p className="text-muted small mb-0">₹{service.price} • {service.duration} mins</p>
                             </div>
                         </Link>

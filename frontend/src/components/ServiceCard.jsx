@@ -10,7 +10,7 @@ const ServiceCard = ({ service }) => {
     const handleAddToCart = (e) => {
         e.preventDefault(); // Prevents navigation if the card has a link wrapper
         addToCart(service);
-        toast.success(`${service.name} added to cart!`);
+        toast.success(`${service.subcategory || service.name} added to cart!`);
     };
 
     return (
@@ -22,14 +22,15 @@ const ServiceCard = ({ service }) => {
                     className="w-100 h-100 object-fit-cover"
                 />
                 <span className="position-absolute top-3 start-3 badge bg-primary bg-gradient shadow-sm px-3 py-2 text-uppercase fs-8 fw-semibold">
-                    {service.category}
+                    {service.name}
                 </span>
             </div>
 
             <div className="card-body d-flex flex-column p-4">
                 <h5 className="card-title fw-bold text-dark mb-2 text-truncate-2" style={{ height: '48px', lineHeight: '24px' }}>
-                    {service.name}
+                    {service.subcategory || service.name}
                 </h5>
+                <div className="text-muted small fw-semibold mb-2">{service.category}</div>
                 <p className="card-text text-muted mb-4 text-truncate-3" style={{ height: '72px', fontSize: '0.9rem' }}>
                     {service.description}
                 </p>

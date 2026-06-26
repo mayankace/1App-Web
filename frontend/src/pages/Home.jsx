@@ -64,11 +64,11 @@ const Home = () => {
             {/* 5. Horizontal Scroll: specific subcategory if exists, else slice */}
             <HorizontalServiceScroller 
                 title="Cleaning Services" 
-                services={services.filter(s => s.subcategory?.toLowerCase().includes('clean')).slice(0, 10)} 
+                services={services.filter(s => `${s.category || ''} ${s.subcategory || ''}`.toLowerCase().includes('clean')).slice(0, 10)}
             />
             
             {/* Fallback if no cleaning services exist in DB yet */}
-            {services.filter(s => s.subcategory?.toLowerCase().includes('clean')).length === 0 && (
+            {services.filter(s => `${s.category || ''} ${s.subcategory || ''}`.toLowerCase().includes('clean')).length === 0 && (
                 <HorizontalServiceScroller 
                     title="Home Repair Services" 
                     services={services.slice(2, 8)} 

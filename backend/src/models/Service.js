@@ -4,7 +4,6 @@ const serviceSchema = new mongoose.Schema({
     name: {
         type: String,
         required: [true, 'Please provide service name'],
-        unique: true,
         trim: true
     },
     description: {
@@ -50,5 +49,7 @@ const serviceSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
+
+serviceSchema.index({ name: 1, category: 1, subcategory: 1 });
 
 module.exports = mongoose.model('Service', serviceSchema);

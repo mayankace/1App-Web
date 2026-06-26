@@ -13,6 +13,7 @@ const authRoutes = require('./routes/authRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const Service = require('./models/Service');
 
 // Import middleware
 const { xssProtection } = require('./middleware/security');
@@ -24,7 +25,17 @@ dns.setServers(['1.1.1.1', '8.8.8.8']);
 // Database connection
 
 mongoose.connect("mongodb://127.0.0.1:27017/vmarc")
-    .then(() => console.log('✅ MongoDB connected successfully'))
+    .then(async () => {
+        console.log('✅ MongoDB connected successfully');
+        try {
+            await Service.collection.dropIndex('name_1');
+            console.log('Removed old unique service name index');
+        } catch (err) {
+            if (err.codeName !== 'IndexNotFound') {
+                console.warn('Could not remove old service name index:', err.message);
+            }
+        }
+    })
     .catch(err => console.error('❌ MongoDB connection error:', err));
 
 

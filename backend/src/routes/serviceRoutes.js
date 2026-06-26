@@ -35,4 +35,6 @@ router.delete(
     serviceController.deleteService
 );
 
+router.get('/hierarchy', serviceController.getServiceHierarchy);
+
 module.exports = router;

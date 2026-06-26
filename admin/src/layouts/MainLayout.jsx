@@ -1,7 +1,11 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import adminApi from '../services/adminApi';
-import { FaLayout, FaChartBar, FaTasks, FaWrench, FaFolderOpen, FaUsers, FaTag, FaSignOutAlt, FaTools } from 'react-icons/fa';
+import {
+    FaLayout, FaChartBar, FaTasks, FaWrench, FaFolderOpen,
+    FaUsers, FaTag, FaSignOutAlt, FaTools, FaPlus,
+    FaList, FaLayerGroup
+} from 'react-icons/fa';
 
 const MainLayout = () => {
     const navigate = useNavigate();
@@ -44,6 +48,13 @@ const MainLayout = () => {
                                 <span>Bookings</span>
                             </NavLink>
                         </li>
+
+                        {/* Service Management Section */}
+                        <li className="nav-item mt-2">
+                            <div className="text-muted small text-uppercase px-3 mb-2" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>
+                                Service Management
+                            </div>
+                        </li>
                         <li className="nav-item">
                             <NavLink
                                 to="/services"
@@ -61,6 +72,21 @@ const MainLayout = () => {
                                 <FaFolderOpen />
                                 <span>Categories</span>
                             </NavLink>
+                        </li>
+                        <li className="nav-item">
+                            <NavLink
+                                to="/subcategories"
+                                className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-dark text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
+                            >
+                                <FaLayerGroup />
+                                <span>Subcategories</span>
+                            </NavLink>
+                        </li>
+
+                        <li className="nav-item mt-2">
+                            <div className="text-muted small text-uppercase px-3 mb-2" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>
+                                Management
+                            </div>
                         </li>
                         <li className="nav-item">
                             <NavLink

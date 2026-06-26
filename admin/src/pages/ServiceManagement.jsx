@@ -1,23 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import adminApi from '../services/adminApi';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { FaPlus, FaEdit, FaTrash, FaRupeeSign, FaClock, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaCheckCircle, FaTimesCircle, FaWrench } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 const ServiceManagement = () => {
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [categories, setCategories] = useState([]);
-
-    // Form/Modal states
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
-    const [name, setName] = useState('');
+    const [serviceName, setServiceName] = useState('');
     const [description, setDescription] = useState('');
-    const [price, setPrice] = useState('');
-    const [duration, setDuration] = useState('');
-    const [category, setCategory] = useState('');
-    const [subcategory, setSubcategory] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [imageFile, setImageFile] = useState(null);
     const [submitting, setSubmitting] = useState(false);
@@ -27,14 +20,24 @@ const ServiceManagement = () => {
         try {
             const res = await adminApi.getServices();
             if (res.success) {
-                setServices(res.data.services);
-            }
-            const catRes = await adminApi.getCategories();
-            if (catRes.success) {
-                setCategories(catRes.data.categories);
+                // Get unique service names
+                const uniqueServices = res.data.services.reduce((acc, service) => {
+                    if (!acc.find(s => s.name === service.name)) {
+                        acc.push({
+                            _id: service._id,
+                            name: service.name,
+                            description: service.description || '',
+                            imageUrl: service.imageUrl || '',
+                            isActive: service.isActive,
+                            createdAt: service.createdAt
+                        });
+                    }
+                    return acc;
+                }, []);
+                setServices(uniqueServices);
             }
         } catch (err) {
-            toast.error('Failed to load services database');
+            toast.error('Failed to load services');
         } finally {
             setLoading(false);
         }
@@ -46,12 +49,8 @@ const ServiceManagement = () => {
 
     const handleOpenCreate = () => {
         setEditingId(null);
-        setName('');
+        setServiceName('');
         setDescription('');
-        setPrice('');
-        setDuration('');
-        setCategory('');
-        setSubcategory('');
         setImageUrl('');
         setImageFile(null);
         setShowForm(true);
@@ -59,46 +58,42 @@ const ServiceManagement = () => {
 
     const handleOpenEdit = (service) => {
         setEditingId(service._id);
-        setName(service.name);
-        setDescription(service.description);
-        setPrice(service.price);
-        setDuration(service.duration);
-        setCategory(service.category);
-        setSubcategory(service.subcategory || '');
+        setServiceName(service.name);
+        setDescription(service.description || '');
         setImageUrl(service.imageUrl || '');
         setImageFile(null);
         setShowForm(true);
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to deactivate/delete this service?')) return;
+        if (!window.confirm('Are you sure you want to delete this service? This will also delete all associated categories and subcategories.')) return;
         try {
             const res = await adminApi.deleteService(id);
             if (res.success) {
-                toast.success('Service de-activated successfully!');
+                toast.success('Service deleted successfully!');
                 fetchServices();
             }
         } catch (err) {
-            toast.error('Deactivation failed');
+            toast.error('Deletion failed');
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!name.trim() || !description.trim() || !price || !duration || !category.trim() || !subcategory.trim()) {
-            toast.error('All fields are required!');
+        if (!serviceName.trim()) {
+            toast.error('Service name is required!');
             return;
         }
 
         setSubmitting(true);
         try {
             const formData = new FormData();
-            formData.append('name', name);
-            formData.append('description', description);
-            formData.append('price', price);
-            formData.append('duration', duration);
-            formData.append('category', category);
-            formData.append('subcategory', subcategory);
+            formData.append('name', serviceName);
+            formData.append('description', description || '');
+            formData.append('price', 0);
+            formData.append('duration', 30);
+            formData.append('category', 'General');
+            formData.append('subcategory', 'General');
 
             if (imageFile) {
                 formData.append('image', imageFile);
@@ -127,103 +122,45 @@ const ServiceManagement = () => {
         <div>
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1 className="fw-extrabold text-dark mb-1">Service Database</h1>
-                    <p className="text-muted">Register, edit, or remove 1App customer booking service items.</p>
+                    <h1 className="fw-extrabold text-dark mb-1">Service Names</h1>
+                    <p className="text-muted">Manage main service categories (e.g., Home Care, Electrical, Plumbing)</p>
                 </div>
                 {!showForm && (
                     <button onClick={handleOpenCreate} className="btn btn-dark fw-bold d-flex align-items-center gap-2 px-4 shadow-sm">
                         <FaPlus />
-                        <span>Add New Service</span>
+                        <span>Add Service Name</span>
                     </button>
                 )}
             </div>
 
-            {showForm ? (
+            {showForm && (
                 <div className="card border-0 shadow-sm rounded-3 bg-white p-4 mb-4">
                     <h5 className="fw-bold mb-4 border-bottom pb-2">
-                        {editingId ? 'Edit Existing Service Details' : 'Register New Electrical Service'}
+                        {editingId ? 'Edit Service Name' : 'Create New Service Name'}
                     </h5>
-
                     <form onSubmit={handleSubmit}>
                         <div className="row g-3 mb-4">
-                            <div className="col-md-6">
-                                <label className="form-label text-muted small fw-bold">Service Name</label>
+                            <div className="col-md-8">
+                                <label className="form-label text-muted small fw-bold">Service Name *</label>
                                 <input
                                     type="text"
                                     required
                                     className="form-control bg-light border-0"
-                                    placeholder="Ceiling Fan Repair"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="e.g., Home Care, Electrical Services"
+                                    value={serviceName}
+                                    onChange={(e) => setServiceName(e.target.value)}
                                 />
                             </div>
-                            <div className="col-md-6">
-                                <label className="form-label text-muted small fw-bold">Category</label>
-                                <input
-                                    type="text"
-                                    required
-                                    list="existing-categories"
-                                    className="form-control bg-light border-0"
-                                    placeholder="Installation, Cabling, Safety, etc."
-                                    value={category}
-                                    onChange={(e) => setCategory(e.target.value)}
-                                />
-                                <datalist id="existing-categories">
-                                    {categories.map((cat, idx) => <option key={idx} value={cat.category} />)}
-                                </datalist>
-                            </div>
-                            <div className="col-md-6">
-                                <label className="form-label text-muted small fw-bold">Subcategory</label>
-                                <input
-                                    type="text"
-                                    required
-                                    className="form-control bg-light border-0"
-                                    placeholder="Electrical Safety, Plumbing, etc."
-                                    value={subcategory}
-                                    onChange={(e) => setSubcategory(e.target.value)}
-                                />
-                            </div>
-                            <div className="col-md-6">
-                                <label className="form-label text-muted small fw-bold">Price (INR)</label>
-                                <div className="input-group">
-                                    <span className="input-group-text bg-light border-0"><FaRupeeSign /></span>
-                                    <input
-                                        type="number"
-                                        required
-                                        className="form-control bg-light border-0"
-                                        placeholder="799"
-                                        value={price}
-                                        onChange={(e) => setPrice(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <div className="col-md-6">
-                                <label className="form-label text-muted small fw-bold">Duration (Minutes)</label>
-                                <div className="input-group">
-                                    <span className="input-group-text bg-light border-0"><FaClock /></span>
-                                    <input
-                                        type="number"
-                                        required
-                                        className="form-control bg-light border-0"
-                                        placeholder="60"
-                                        value={duration}
-                                        onChange={(e) => setDuration(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <div className="col-12">
-                                <label className="form-label text-muted small fw-bold">Detailed Description</label>
+                            <div className="col-md-12">
+                                <label className="form-label text-muted small fw-bold">Description</label>
                                 <textarea
-                                    rows="3"
-                                    required
+                                    rows="2"
                                     className="form-control bg-light border-0"
-                                    placeholder="Explain step-by-step what the service includes..."
+                                    placeholder="Brief description of this service"
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                 />
                             </div>
-
-                            {/* Image selector */}
                             <div className="col-md-6">
                                 <label className="form-label text-muted small fw-bold">Image URL (Optional)</label>
                                 <input
@@ -236,7 +173,7 @@ const ServiceManagement = () => {
                                 />
                             </div>
                             <div className="col-md-6">
-                                <label className="form-label text-muted small fw-bold">Or Upload Image File</label>
+                                <label className="form-label text-muted small fw-bold">Or Upload Image</label>
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -246,23 +183,21 @@ const ServiceManagement = () => {
                                 />
                             </div>
                         </div>
-
                         <div className="d-flex gap-2 justify-content-end">
                             <button type="button" onClick={() => setShowForm(false)} className="btn btn-outline-secondary px-4 py-2">
                                 Cancel
                             </button>
                             <button type="submit" disabled={submitting} className="btn btn-dark fw-bold px-4 py-2 shadow-sm">
-                                {submitting ? 'Saving...' : 'Save Configuration'}
+                                {submitting ? 'Saving...' : 'Save Service Name'}
                             </button>
                         </div>
                     </form>
                 </div>
-            ) : null}
+            )}
 
-            {/* List Table */}
             <div className="card border-0 shadow-sm rounded-3 bg-white p-4">
                 {loading ? (
-                    <LoadingSpinner message="Searching services..." />
+                    <LoadingSpinner message="Loading services..." />
                 ) : (
                     <div className="table-responsive">
                         <table className="table table-hover align-middle">
@@ -270,9 +205,7 @@ const ServiceManagement = () => {
                                 <tr>
                                     <th>Image</th>
                                     <th>Service Name</th>
-                                    <th>Category</th>
-                                    <th>Subcategory</th>
-                                    <th>Cost / Duration</th>
+                                    <th>Description</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -281,19 +214,22 @@ const ServiceManagement = () => {
                                 {services.map((service) => (
                                     <tr key={service._id}>
                                         <td>
-                                            <img
-                                                src={service.imageUrl || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=150'}
-                                                alt={service.name}
-                                                className="rounded object-fit-cover"
-                                                style={{ width: '48px', height: '48px' }}
-                                            />
+                                            {service.imageUrl ? (
+                                                <img
+                                                    src={service.imageUrl}
+                                                    alt={service.name}
+                                                    className="rounded object-fit-cover"
+                                                    style={{ width: '48px', height: '48px' }}
+                                                />
+                                            ) : (
+                                                <div className="bg-light rounded d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px' }}>
+                                                    <FaWrench className="text-muted" />
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="fw-bold text-dark">{service.name}</td>
-                                        <td><span className="badge bg-light text-secondary border text-uppercase" style={{ fontSize: '0.7rem' }}>{service.category}</span></td>
-                                        <td><span className="badge bg-light text-secondary border text-uppercase" style={{ fontSize: '0.7rem' }}>{service.subcategory}</span></td>
-                                        <td>
-                                            <div className="fw-bold text-primary">₹{service.price}</div>
-                                            <small className="text-muted">{service.duration} mins</small>
+                                        <td className="text-muted" style={{ maxWidth: '300px' }}>
+                                            {service.description || 'No description'}
                                         </td>
                                         <td>
                                             {service.isActive ? (
@@ -321,7 +257,7 @@ const ServiceManagement = () => {
                                                     <button
                                                         onClick={() => handleDelete(service._id)}
                                                         className="btn btn-sm btn-light border text-danger"
-                                                        title="Delete (deactivate)"
+                                                        title="Delete"
                                                     >
                                                         <FaTrash />
                                                     </button>
@@ -332,7 +268,9 @@ const ServiceManagement = () => {
                                 ))}
                                 {services.length === 0 && (
                                     <tr>
-                                        <td colSpan="6" className="text-center py-5 text-muted">No services found in database. Seeding recommended.</td>
+                                        <td colSpan="5" className="text-center py-5 text-muted">
+                                            No services found. Create your first service name!
+                                        </td>
                                     </tr>
                                 )}
                             </tbody>

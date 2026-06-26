@@ -2,9 +2,10 @@ import API from './api';
 
 const serviceService = {
     getAllServices: async (filters = {}) => {
-        const { category, subcategory, search } = filters;
+        const { serviceName, category, subcategory, search } = filters;
         let url = '/services';
         const params = [];
+        if (serviceName) params.push(`serviceName=${encodeURIComponent(serviceName)}`);
         if (category) params.push(`category=${encodeURIComponent(category)}`);
         if (subcategory) params.push(`subcategory=${encodeURIComponent(subcategory)}`);
         if (search) params.push(`search=${encodeURIComponent(search)}`);

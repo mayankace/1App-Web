@@ -12,8 +12,11 @@ const Services = () => {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     
+    const activeServiceName = searchParams.get('serviceName') || '';
     const activeCategory = searchParams.get('category') || '';
     const activeSubcategory = searchParams.get('subcategory') || '';
+    const activeServiceGroup = categories.find(service => service.serviceName === activeServiceName);
+    const activeCategoryGroup = activeServiceGroup?.categories?.find(cat => cat.category === activeCategory);
 
     useEffect(() => {
         // Fetch categories once on load
@@ -34,6 +37,7 @@ const Services = () => {
         setLoading(true);
         try {
             const res = await serviceService.getAllServices({
+                serviceName: activeServiceName,
                 category: activeCategory,
                 subcategory: activeSubcategory,
                 search: searchQuery
@@ -50,11 +54,24 @@ const Services = () => {
 
     useEffect(() => {
         fetchFilteredServices();
-    }, [activeCategory, activeSubcategory]);
+    }, [activeServiceName, activeCategory, activeSubcategory]);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
         fetchFilteredServices();
+    };
+
+    const handleServiceNameClick = (serviceName) => {
+        if (serviceName === '') {
+            searchParams.delete('serviceName');
+            searchParams.delete('category');
+            searchParams.delete('subcategory');
+        } else {
+            searchParams.set('serviceName', serviceName);
+            searchParams.delete('category');
+            searchParams.delete('subcategory');
+        }
+        setSearchParams(searchParams);
     };
 
     const handleCategoryClick = (category) => {
@@ -63,7 +80,7 @@ const Services = () => {
             searchParams.delete('subcategory');
         } else {
             searchParams.set('category', category);
-            searchParams.delete('subcategory'); // Reset subcategory when category changes
+            searchParams.delete('subcategory');
         }
         setSearchParams(searchParams);
     };
@@ -79,6 +96,7 @@ const Services = () => {
 
     const handleClearFilters = () => {
         setSearchQuery('');
+        searchParams.delete('serviceName');
         searchParams.delete('category');
         searchParams.delete('subcategory');
         setSearchParams(searchParams);
@@ -110,7 +128,7 @@ const Services = () => {
                             />
                         </div>
                         <button type="submit" className="btn btn-dark px-4 fw-bold">Search</button>
-                        {(activeCategory || searchQuery) && (
+                        {(activeServiceName || activeCategory || searchQuery) && (
                             <button 
                                 type="button" 
                                 onClick={handleClearFilters}
@@ -126,42 +144,65 @@ const Services = () => {
                 {/* 2. Left Column: Categories Navigation */}
                 <div className="col-lg-3">
                     <div className="card border-0 shadow-sm rounded-3 p-4 bg-white sticky-lg-top" style={{ top: '100px', zIndex: 10 }}>
-                        <h5 className="fw-bold text-dark mb-3 pb-2 border-bottom">Categories</h5>
+                        <h5 className="fw-bold text-dark mb-3 pb-2 border-bottom">Service Names</h5>
                         <div className="d-flex flex-column gap-2">
                             <button 
-                                onClick={() => handleCategoryClick('')}
-                                className={`btn text-start py-2 px-3 fw-medium rounded-3 ${!activeCategory ? 'btn-dark text-white fw-bold' : 'btn-light text-muted'}`}
+                                onClick={() => handleServiceNameClick('')}
+                                className={`btn text-start py-2 px-3 fw-medium rounded-3 ${!activeServiceName ? 'btn-dark text-white fw-bold' : 'btn-light text-muted'}`}
                             >
                                 All Services
                             </button>
-                            {categories.map((catObj, idx) => {
-                                const catName = catObj.category;
-                                const isActiveCat = activeCategory === catName;
+                            {categories.map((serviceGroup, idx) => {
+                                const serviceName = serviceGroup.serviceName || serviceGroup.name || serviceGroup.category;
+                                const isActiveService = activeServiceName === serviceName;
                                 return (
                                     <div key={idx} className="d-flex flex-column gap-1">
                                         <button 
-                                            onClick={() => handleCategoryClick(catName)}
-                                            className={`btn text-start py-2 px-3 fw-medium rounded-3 ${isActiveCat ? 'btn-dark text-white fw-bold' : 'btn-light text-muted'}`}
+                                            onClick={() => handleServiceNameClick(serviceName)}
+                                            className={`btn text-start py-2 px-3 fw-medium rounded-3 ${isActiveService ? 'btn-dark text-white fw-bold' : 'btn-light text-muted'}`}
                                         >
-                                            {catName}
+                                            {serviceName}
                                         </button>
-                                        {isActiveCat && catObj.subcategories && catObj.subcategories.length > 0 && (
+                                        {isActiveService && serviceGroup.categories && serviceGroup.categories.length > 0 && (
                                             <div className="ps-3 d-flex flex-column gap-1 mt-1 border-start ms-2">
                                                 <button
-                                                    onClick={() => handleSubcategoryClick('')}
-                                                    className={`btn btn-sm text-start py-1 px-2 fw-medium rounded-3 ${!activeSubcategory ? 'bg-secondary text-white' : 'text-muted hover-bg-light'}`}
+                                                    onClick={() => handleCategoryClick('')}
+                                                    className={`btn btn-sm text-start py-1 px-2 fw-medium rounded-3 ${!activeCategory ? 'bg-secondary text-white' : 'text-muted hover-bg-light'}`}
                                                 >
-                                                    All in {catName}
+                                                    All in {serviceName}
                                                 </button>
-                                                {catObj.subcategories.map((sub, sIdx) => (
-                                                    <button
-                                                        key={sIdx}
-                                                        onClick={() => handleSubcategoryClick(sub)}
-                                                        className={`btn btn-sm text-start py-1 px-2 fw-medium rounded-3 ${activeSubcategory === sub ? 'bg-secondary text-white' : 'text-muted hover-bg-light'}`}
-                                                    >
-                                                        {sub}
-                                                    </button>
-                                                ))}
+                                                {serviceGroup.categories.map((cat, cIdx) => {
+                                                    const isActiveCategory = activeCategory === cat.category;
+                                                    return (
+                                                        <div key={cIdx} className="d-flex flex-column gap-1">
+                                                            <button
+                                                                onClick={() => handleCategoryClick(cat.category)}
+                                                                className={`btn btn-sm text-start py-1 px-2 fw-medium rounded-3 ${isActiveCategory ? 'bg-secondary text-white' : 'text-muted hover-bg-light'}`}
+                                                            >
+                                                                {cat.category}
+                                                            </button>
+                                                            {isActiveCategory && cat.subcategories && cat.subcategories.length > 0 && (
+                                                                <div className="ps-3 d-flex flex-column gap-1 border-start ms-2">
+                                                                    <button
+                                                                        onClick={() => handleSubcategoryClick('')}
+                                                                        className={`btn btn-sm text-start py-1 px-2 fw-medium rounded-3 ${!activeSubcategory ? 'bg-light text-dark' : 'text-muted hover-bg-light'}`}
+                                                                    >
+                                                                        All in {cat.category}
+                                                                    </button>
+                                                                    {cat.subcategories.map((sub, sIdx) => (
+                                                                        <button
+                                                                            key={sIdx}
+                                                                            onClick={() => handleSubcategoryClick(sub)}
+                                                                            className={`btn btn-sm text-start py-1 px-2 fw-medium rounded-3 ${activeSubcategory === sub ? 'bg-light text-dark' : 'text-muted hover-bg-light'}`}
+                                                                        >
+                                                                            {sub}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>
@@ -177,19 +218,37 @@ const Services = () => {
                         <LoadingSpinner message="Searching services..." />
                     ) : (
                         <div>
-                            {activeCategory && !activeSubcategory ? (
+                            {activeServiceName && !activeCategory ? (
+                                <div>
+                                    <h4 className="fw-bold mb-4">Select a category in {activeServiceName}</h4>
+                                    <div className="row g-4">
+                                        {activeServiceGroup?.categories?.map((cat, idx) => (
+                                            <div key={idx} className="col-md-4">
+                                                <div 
+                                                    className="card border-0 shadow-sm rounded-4 p-4 text-center cursor-pointer hover-shadow transition-all bg-white h-100"
+                                                    onClick={() => handleCategoryClick(cat.category)}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    <h5 className="fw-bold text-dark mb-2">{cat.category}</h5>
+                                                    <p className="text-muted small mb-0">View subcategories</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : activeCategory && !activeSubcategory ? (
                                 <div>
                                     <h4 className="fw-bold mb-4">Select a subcategory in {activeCategory}</h4>
                                     <div className="row g-4">
-                                        {categories.find(c => c.category === activeCategory)?.subcategories.map((sub, idx) => (
+                                        {activeCategoryGroup?.subcategories?.map((sub, idx) => (
                                             <div key={idx} className="col-md-4">
-                                                <div 
+                                                <div
                                                     className="card border-0 shadow-sm rounded-4 p-4 text-center cursor-pointer hover-shadow transition-all bg-white h-100"
                                                     onClick={() => handleSubcategoryClick(sub)}
                                                     style={{ cursor: 'pointer' }}
                                                 >
                                                     <h5 className="fw-bold text-dark mb-2">{sub}</h5>
-                                                    <p className="text-muted small mb-0">View all services</p>
+                                                    <p className="text-muted small mb-0">View service</p>
                                                 </div>
                                             </div>
                                         ))}
@@ -197,7 +256,7 @@ const Services = () => {
                                 </div>
                             ) : services.length > 0 ? (
                                 <div>
-                                    {activeSubcategory && <h4 className="fw-bold mb-4">{activeSubcategory} Services</h4>}
+                                    {activeSubcategory && <h4 className="fw-bold mb-4">{activeSubcategory}</h4>}
                                     <div className="row g-4">
                                         {services.map((service) => (
                                             <div key={service._id} className="col-md-6 col-lg-6">

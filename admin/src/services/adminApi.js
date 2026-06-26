@@ -73,8 +73,18 @@ const adminApi = {
     },
 
     // Services CRUD (calls backend /services directly but uses admin token via interceptor)
-    getServices: async () => {
-        const res = await API.get('/services');
+    getServices: async (filters = {}) => {
+        const { serviceName, category, subcategory, search } = filters;
+        let url = '/services';
+        const params = [];
+        if (serviceName) params.push(`serviceName=${encodeURIComponent(serviceName)}`);
+        if (category) params.push(`category=${encodeURIComponent(category)}`);
+        if (subcategory) params.push(`subcategory=${encodeURIComponent(subcategory)}`);
+        if (search) params.push(`search=${encodeURIComponent(search)}`);
+        if (params.length > 0) {
+            url += `?${params.join('&')}`;
+        }
+        const res = await API.get(url);
         return res.data;
     },
 
@@ -104,7 +114,13 @@ const adminApi = {
     getCategories: async () => {
         const res = await API.get('/services/categories');
         return res.data;
-    }
+    },
+
+    // Add to adminApi object
+    getServiceHierarchy: async () => {
+        const res = await API.get('/services/hierarchy');
+        return res.data;
+    },
 };
 
 export default adminApi;

@@ -15,7 +15,7 @@ const HeroSection = ({ services }) => {
                     <div className="row g-3">
                         {services.slice(0, 9).map((service, idx) => (
                             <div key={service._id || idx} className="col-4 text-center">
-                                <Link to={`/services?category=${encodeURIComponent(service.category)}&subcategory=${encodeURIComponent(service.subcategory || '')}`} className="text-decoration-none">
+                                <Link to={`/services?serviceName=${encodeURIComponent(service.name)}&category=${encodeURIComponent(service.category)}&subcategory=${encodeURIComponent(service.subcategory || '')}`} className="text-decoration-none">
                                     <div className="d-inline-flex align-items-center justify-content-center bg-light text-dark rounded-4 mb-2 overflow-hidden hover-shadow transition-all" style={{ width: '70px', height: '70px' }}>
                                         {service.imageUrl ? (
                                             <img src={`http://localhost:5000${service.imageUrl}`} alt={service.name} className="w-100 h-100 object-fit-cover" />
@@ -24,7 +24,7 @@ const HeroSection = ({ services }) => {
                                         )}
                                     </div>
                                     <div className="text-dark fw-medium small lh-sm" style={{ fontSize: '0.75rem' }}>
-                                        {service.name}
+                                        {service.subcategory || service.name}
                                     </div>
                                 </Link>
                             </div>

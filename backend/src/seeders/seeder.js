@@ -45,63 +45,63 @@ const seedData = async () => {
         // 2) Seed Initial 1App Services
         const sampleServices = [
             {
-                name: 'Full Home Wiring Safety Inspection',
-                description: 'Comprehensive inspection of electrical wiring, circuit breakers, grounding systems, and outlets. Highly recommended for older structures to prevent hazards.',
-                price: 1499,
-                duration: 90,
-                category: 'Home Service',
-                subcategory: 'Electrical Safety',
-                imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=400',
-                isActive: true
-            },
-            {
-                name: '1App Premium Cable Laying (per meter)',
-                description: 'Professional cable ducting and wiring installation using 1App fire-resistant low smoke (FRLS) wires. Price excludes materials.',
-                price: 199,
+                name: 'Home Care',
+                description: 'Deep bedroom cleaning including dusting, floor cleaning, bed-side area cleaning, visible stain removal, and surface sanitization.',
+                price: 699,
                 duration: 60,
-                category: 'Home Service',
-                subcategory: 'Electrical Wiring',
-                imageUrl: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?auto=format&fit=crop&q=80&w=400',
+                category: 'Cleaning',
+                subcategory: 'Bedroom Cleaning',
+                imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=400',
                 isActive: true
             },
             {
-                name: 'Smart Distribution Board (DB) Installation',
-                description: 'Upgrade your distribution board with high-quality MCBs, ELCBs, and phase selectors. Includes testing and safety certifications.',
-                price: 2499,
-                duration: 120,
-                category: 'Home Service',
-                subcategory: 'Electrical Installation',
+                name: 'Home Care',
+                description: 'Toilet and bathroom cleaning with descaling, floor scrubbing, fixture cleaning, and odor-control sanitization.',
+                price: 599,
+                duration: 45,
+                category: 'Cleaning',
+                subcategory: 'Toilet Cleaning',
+                imageUrl: 'https://images.unsplash.com/photo-1620626011761-996317b8d101?auto=format&fit=crop&q=80&w=400',
+                isActive: true
+            },
+            {
+                name: 'Home Care',
+                description: 'Kitchen cleaning including countertop cleaning, sink cleaning, oil stain treatment, cabinet exterior cleaning, and floor cleaning.',
+                price: 799,
+                duration: 75,
+                category: 'Cleaning',
+                subcategory: 'Kitchen Cleaning',
+                imageUrl: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&q=80&w=400',
+                isActive: true
+            },
+            {
+                name: 'Home Care',
+                description: 'Sofa vacuuming and shampoo cleaning for dust, light stains, and fabric freshness.',
+                price: 899,
+                duration: 45,
+                category: 'Cleaning',
+                subcategory: 'Sofa Cleaning',
+                imageUrl: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=400',
+                isActive: true
+            },
+            {
+                name: 'Home Care',
+                description: 'Fan, switchboard, and minor wiring repair for common household electrical issues.',
+                price: 499,
+                duration: 60,
+                category: 'Electrical',
+                subcategory: 'Minor Electrical Repair',
                 imageUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=400',
                 isActive: true
             },
             {
-                name: 'AC Electrical Socket & Line Installation',
-                description: 'Installation of a heavy-duty 16A power socket with dedicated wiring from the main distribution panel to secure appliance loads.',
-                price: 799,
-                duration: 45,
-                category: 'Home Service',
-                subcategory: 'Appliance Installation',
-                imageUrl: 'https://images.unsplash.com/photo-1558224492-db896886cd53?auto=format&fit=crop&q=80&w=400',
-                isActive: true
-            },
-            {
-                name: 'Emergency Electrical Short Circuit Repair',
-                description: 'Priority troubleshooting and repair services for sudden electrical outages, trips, short-circuits, and wire burnouts.',
-                price: 1199,
-                duration: 60,
-                category: 'Home Service',
-                subcategory: 'Emergency Repair',
-                imageUrl: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=400',
-                isActive: true
-            },
-            {
-                name: 'Inverter & Battery Backup Installation',
-                description: 'Complete setup of domestic backup power systems, including inverter mountings, battery terminal configurations, and power source loops.',
-                price: 1899,
-                duration: 120,
-                category: 'Home Service',
-                subcategory: 'Inverter & Battery',
-                imageUrl: 'https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&q=80&w=400',
+                name: 'Personal Care',
+                description: 'Basic in-home haircut service with hygienic tools and cleanup after the appointment.',
+                price: 399,
+                duration: 40,
+                category: 'Grooming',
+                subcategory: 'Haircut',
+                imageUrl: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&q=80&w=400',
                 isActive: true
             }
         ];
