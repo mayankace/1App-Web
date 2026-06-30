@@ -79,7 +79,7 @@ const CategoryManagement = () => {
     };
 
     const handleDelete = async (category) => {
-        if (!window.confirm(`Are you sure you want to delete the category "${category.category}"? This will also delete all associated subcategories.`)) return;
+        if (!window.confirm(`Are you sure you want to delete the sub-category "${category.category}"? This will also delete all associated services.`)) return;
         try {
             // Find all services with this category and delete them
             const servicesRes = await adminApi.getServices({
@@ -149,13 +149,13 @@ const CategoryManagement = () => {
         <div>
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1 className="fw-extrabold text-dark mb-1">Category Management</h1>
-                    <p className="text-muted">Add categories under specific services (e.g., Cleaning under Home Care)</p>
+                    <h1 className="fw-extrabold text-dark mb-1">Sub-Category Management</h1>
+                    <p className="text-muted">Add sub-categories under specific categories (e.g., Cleaning under Home Care)</p>
                 </div>
                 {!showForm && (
                     <button onClick={handleOpenCreate} className="btn btn-dark fw-bold d-flex align-items-center gap-2 px-4 shadow-sm">
                         <FaPlus />
-                        <span>Add Category</span>
+                        <span>Add Sub-Category</span>
                     </button>
                 )}
             </div>
@@ -163,19 +163,19 @@ const CategoryManagement = () => {
             {showForm && (
                 <div className="card border-0 shadow-sm rounded-3 bg-white p-4 mb-4">
                     <h5 className="fw-bold mb-4 border-bottom pb-2">
-                        {editingId ? 'Edit Category' : 'Create New Category'}
+                        {editingId ? 'Edit Sub-Category' : 'Create New Sub-Category'}
                     </h5>
                     <form onSubmit={handleSubmit}>
                         <div className="row g-3 mb-4">
                             <div className="col-md-6">
-                                <label className="form-label text-muted small fw-bold">Select Service *</label>
+                                <label className="form-label text-muted small fw-bold">Select Category *</label>
                                 <select
                                     required
                                     className="form-select bg-light border-0"
                                     value={selectedService}
                                     onChange={(e) => setSelectedService(e.target.value)}
                                 >
-                                    <option value="">Choose a service...</option>
+                                    <option value="">Choose a category...</option>
                                     {serviceNames.map(service => (
                                         <option key={service._id} value={service.name}>
                                             {service.name}
@@ -184,7 +184,7 @@ const CategoryManagement = () => {
                                 </select>
                             </div>
                             <div className="col-md-6">
-                                <label className="form-label text-muted small fw-bold">Category Name *</label>
+                                <label className="form-label text-muted small fw-bold">Sub-Category Name *</label>
                                 <input
                                     type="text"
                                     required
@@ -199,7 +199,7 @@ const CategoryManagement = () => {
                                 <textarea
                                     rows="2"
                                     className="form-control bg-light border-0"
-                                    placeholder="Brief description of this category"
+                                    placeholder="Brief description of this sub-category"
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                 />
@@ -210,7 +210,7 @@ const CategoryManagement = () => {
                                 Cancel
                             </button>
                             <button type="submit" disabled={submitting} className="btn btn-dark fw-bold px-4 py-2 shadow-sm">
-                                {submitting ? 'Saving...' : 'Save Category'}
+                                {submitting ? 'Saving...' : 'Save Sub-Category'}
                             </button>
                         </div>
                     </form>
@@ -219,14 +219,14 @@ const CategoryManagement = () => {
 
             <div className="card border-0 shadow-sm rounded-3 bg-white p-4">
                 {loading ? (
-                    <LoadingSpinner message="Loading categories..." />
+                    <LoadingSpinner message="Loading sub-categories..." />
                 ) : (
                     <div className="table-responsive">
                         <table className="table table-hover align-middle">
                             <thead className="table-light border-0">
                                 <tr>
-                                    <th>Service</th>
                                     <th>Category</th>
+                                    <th>Sub-Category</th>
                                     <th>Description</th>
                                     <th>Status</th>
                                     <th>Actions</th>
@@ -279,7 +279,7 @@ const CategoryManagement = () => {
                                 {categories.length === 0 && (
                                     <tr>
                                         <td colSpan="5" className="text-center py-5 text-muted">
-                                            No categories found. Create your first category!
+                                            No sub-categories found. Create your first sub-category!
                                         </td>
                                     </tr>
                                 )}

@@ -8,6 +8,7 @@ import { CartProvider } from './context/CartContext';
 
 // Components
 import NavigationBar from './components/Navbar';
+import Footer from './components/Footer';
 import PrivateRoute from './components/PrivateRoute';
 
 // Pages
@@ -27,11 +28,11 @@ function App() {
         <CartProvider>
           <div className="d-flex flex-column min-vh-100 bg-light">
             <NavigationBar />
-            <main className="flex-grow-1 py-4">
+            <main className="flex-grow-1 ">
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/services" element={<Services />} />
-                <Route path="/services/:id" element={<ServiceDetail />} />
+                <Route path="/service/:id" element={<ServiceDetail />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/login" element={<Login />} />
 
@@ -41,12 +42,7 @@ function App() {
                 <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
               </Routes>
             </main>
-            <footer className="bg-dark text-light py-4 mt-auto text-center">
-              <div className="container">
-                <p className="mb-1">&copy; 2026 1App Service Booking Platform. All Rights Reserved.</p>
-                <small className="text-muted">Premium electrical wires, cables, and installation support.</small>
-              </div>
-            </footer>
+            <Footer />
             <ToastContainer position="bottom-right" autoClose={3000} />
           </div>
         </CartProvider>

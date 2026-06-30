@@ -24,6 +24,21 @@ const serviceService = {
     getCategories: async () => {
         const response = await API.get('/services/categories');
         return response.data;
+    },
+
+    getServiceHierarchy: async () => {
+        const response = await API.get('/services/hierarchy');
+        return response.data;
+    },
+
+    getFeaturedServices: async () => {
+        const response = await API.get('/services/featured');
+        return response.data;
+    },
+
+    getServicesByCategory: async (category) => {
+        const response = await API.get(`/services/category/${category}`);
+        return response.data;
     }
 };
 

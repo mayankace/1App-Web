@@ -1,84 +1,101 @@
-import React, { useContext } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import React, { useContext, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
-import { FaShoppingCart, FaUser, FaListAlt, FaSignOutAlt, FaTools } from 'react-icons/fa';
+import { FaShoppingCart, FaUser, FaListAlt, FaSignOutAlt, FaMapMarkerAlt, FaSearch, FaChevronDown } from 'react-icons/fa';
+import { BsStack } from 'react-icons/bs';
 
 const NavigationBar = () => {
     const { isAuthenticated, logout, user } = useContext(AuthContext);
     const { getCartItemsCount } = useContext(CartContext);
     const navigate = useNavigate();
+    const [search, setSearch] = useState('');
 
     const handleLogout = () => {
         logout();
         navigate('/');
     };
 
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (search.trim()) navigate(`/services?search=${encodeURIComponent(search)}`);
+    };
+
     return (
-        <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm py-3 sticky-top">
+        <nav className="sticky-top bg-white border-bottom" style={{ zIndex: 1030 }}>
             <div className="container">
-                <Link className="navbar-brand d-flex align-items-center gap-2 fw-bold text-uppercase tracking-wider" to="/">
-                    <FaTools className="text-warning" />
-                    <span>1App</span>
-                    <span className="badge bg-warning text-dark fs-8 font-monospace">Services</span>
-                </Link>
-                <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#vmarcNavbar">
-                    <span className="navbar-toggler-icon"></span>
-                </button>
+                <div className="d-flex align-items-center py-3 gap-4">
 
-                <div className="collapse navbar-collapse" id="vmarcNavbar">
-                    <ul className="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
-                        <li className="nav-item">
-                            <NavLink className={({ isActive }) => `nav-link fw-semibold px-3 ${isActive ? 'text-warning' : ''}`} to="/">Home</NavLink>
-                        </li>
-                        <li className="nav-item">
-                            <NavLink className={({ isActive }) => `nav-link fw-semibold px-3 ${isActive ? 'text-warning' : ''}`} to="/services">Services</NavLink>
-                        </li>
-                    </ul>
+                    {/* Logo */}
+                    <Link to="/" className="d-flex align-items-center gap-2 text-decoration-none flex-shrink-0">
+                        <BsStack size={22} color="#111" />
+                        <span className="fw-bold text-dark" style={{ fontSize: '18px', letterSpacing: '-0.5px' }}>1 APP</span>
+                    </Link>
 
-                    <div className="d-flex align-items-center gap-3">
-                        <Link className="btn btn-outline-light position-relative d-flex align-items-center gap-2 px-3" to="/cart">
+                    {/* Nav Links */}
+                    <div className="d-none d-lg-flex align-items-center gap-3">
+                        <Link to="/" className="text-dark text-decoration-none fw-medium" style={{ fontSize: '14px' }}>Revamp</Link>
+                        <Link to="/services" className="text-dark text-decoration-none fw-medium" style={{ fontSize: '14px' }}>Native</Link>
+                        <Link to="/services" className="text-dark text-decoration-none fw-medium" style={{ fontSize: '14px' }}>Beauty</Link>
+                    </div>
+
+                    {/* Center: Location + Search */}
+                    <div className="d-none d-lg-flex align-items-center gap-2 flex-grow-1 justify-content-center">
+                        {/* Location Pill */}
+                        <div className="d-flex align-items-center gap-2 px-3 py-2 rounded-pill border" style={{ fontSize: '13px', color: '#444', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            <FaMapMarkerAlt size={13} className="text-muted" />
+                            <span>1201, CMF Ave - ...</span>
+                            <FaChevronDown size={11} className="text-muted" />
+                        </div>
+
+                        {/* Search Bar */}
+                        <form onSubmit={handleSearch} className="d-flex align-items-center border rounded-pill px-3 py-2 flex-grow-1" style={{ maxWidth: '420px' }}>
+                            <FaSearch size={13} className="text-muted me-2 flex-shrink-0" />
+                            <input
+                                type="text"
+                                className="border-0 bg-transparent w-100"
+                                placeholder="Search for 'AC service'"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                style={{ outline: 'none', fontSize: '13px', color: '#444' }}
+                            />
+                        </form>
+                    </div>
+
+                    {/* Right: Cart + User */}
+                    <div className="d-flex align-items-center gap-3 ms-auto flex-shrink-0">
+                        {/* Cart */}
+                        <Link to="/cart" className="position-relative text-dark" style={{ fontSize: '20px' }}>
                             <FaShoppingCart />
-                            <span>Cart</span>
                             {getCartItemsCount() > 0 && (
-                                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '9px' }}>
                                     {getCartItemsCount()}
                                 </span>
                             )}
                         </Link>
 
+                        {/* User */}
                         {isAuthenticated ? (
                             <div className="dropdown">
-                                <button className="btn btn-warning dropdown-toggle d-flex align-items-center gap-2" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <FaUser />
-                                    <span>{user?.name || 'My Account'}</span>
+                                <button className="btn p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown">
+                                    <div className="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style={{ width: 32, height: 32 }}>
+                                        <FaUser size={14} color="#fff" />
+                                    </div>
                                 </button>
-                                <ul className="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="userMenu">
-                                    <li>
-                                        <Link className="dropdown-item d-flex align-items-center gap-2 py-2" to="/profile">
-                                            <FaUser className="text-muted" />
-                                            <span>Profile</span>
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <Link className="dropdown-item d-flex align-items-center gap-2 py-2" to="/bookings">
-                                            <FaListAlt className="text-muted" />
-                                            <span>My Bookings</span>
-                                        </Link>
-                                    </li>
+                                <ul className="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                                    <li><Link className="dropdown-item d-flex align-items-center gap-2 py-2" to="/profile"><FaUser className="text-muted" /><span>Profile</span></Link></li>
+                                    <li><Link className="dropdown-item d-flex align-items-center gap-2 py-2" to="/bookings"><FaListAlt className="text-muted" /><span>My Bookings</span></Link></li>
                                     <li><hr className="dropdown-divider" /></li>
-                                    <li>
-                                        <button className="dropdown-item d-flex align-items-center gap-2 py-2 text-danger" onClick={handleLogout}>
-                                            <FaSignOutAlt />
-                                            <span>Logout</span>
-                                        </button>
-                                    </li>
+                                    <li><button className="dropdown-item d-flex align-items-center gap-2 py-2 text-danger" onClick={handleLogout}><FaSignOutAlt /><span>Logout</span></button></li>
                                 </ul>
                             </div>
                         ) : (
-                            <Link className="btn btn-warning fw-semibold px-4" to="/login">Login / Sign Up</Link>
+                            <div className="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style={{ width: 32, height: 32, cursor: 'pointer' }} onClick={() => navigate('/login')}>
+                                <FaUser size={14} color="#fff" />
+                            </div>
                         )}
                     </div>
+
                 </div>
             </div>
         </nav>

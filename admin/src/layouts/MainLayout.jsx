@@ -61,7 +61,7 @@ const MainLayout = () => {
                                 className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-dark text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
                             >
                                 <FaWrench />
-                                <span>Services</span>
+                                <span>Categories</span>
                             </NavLink>
                         </li>
                         <li className="nav-item">
@@ -70,7 +70,7 @@ const MainLayout = () => {
                                 className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-dark text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
                             >
                                 <FaFolderOpen />
-                                <span>Categories</span>
+                                <span>Sub-Categories</span>
                             </NavLink>
                         </li>
                         <li className="nav-item">
@@ -79,7 +79,7 @@ const MainLayout = () => {
                                 className={({ isActive }) => `nav-link d-flex align-items-center gap-3 py-2.5 px-3 fw-medium text-light ${isActive ? 'bg-dark text-dark fw-bold shadow-sm' : 'hover-bg-muted'}`}
                             >
                                 <FaLayerGroup />
-                                <span>Subcategories</span>
+                                <span>Services</span>
                             </NavLink>
                         </li>
 

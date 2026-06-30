@@ -9,7 +9,7 @@ const ServiceManagement = () => {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
-    const [serviceName, setServiceName] = useState('');
+    const [categoryName, setCategoryName] = useState('');
     const [description, setDescription] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [imageFile, setImageFile] = useState(null);
@@ -34,6 +34,7 @@ const ServiceManagement = () => {
                     }
                     return acc;
                 }, []);
+                // setServices stores top-level categories (the `name` field)
                 setServices(uniqueServices);
             }
         } catch (err) {
@@ -49,7 +50,7 @@ const ServiceManagement = () => {
 
     const handleOpenCreate = () => {
         setEditingId(null);
-        setServiceName('');
+        setCategoryName('');
         setDescription('');
         setImageUrl('');
         setImageFile(null);
@@ -58,7 +59,7 @@ const ServiceManagement = () => {
 
     const handleOpenEdit = (service) => {
         setEditingId(service._id);
-        setServiceName(service.name);
+        setCategoryName(service.name);
         setDescription(service.description || '');
         setImageUrl(service.imageUrl || '');
         setImageFile(null);
@@ -66,7 +67,7 @@ const ServiceManagement = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this service? This will also delete all associated categories and subcategories.')) return;
+        if (!window.confirm('Are you sure you want to delete this category? This will also delete all associated sub-categories and services.')) return;
         try {
             const res = await adminApi.deleteService(id);
             if (res.success) {
@@ -80,15 +81,15 @@ const ServiceManagement = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!serviceName.trim()) {
-            toast.error('Service name is required!');
+        if (!categoryName.trim()) {
+            toast.error('Category name is required!');
             return;
         }
 
         setSubmitting(true);
         try {
             const formData = new FormData();
-            formData.append('name', serviceName);
+            formData.append('name', categoryName);
             formData.append('description', description || '');
             formData.append('price', 0);
             formData.append('duration', 30);
@@ -104,15 +105,15 @@ const ServiceManagement = () => {
             let res;
             if (editingId) {
                 res = await adminApi.updateService(editingId, formData);
-                if (res.success) toast.success('Service updated successfully!');
+                if (res.success) toast.success('Category updated successfully!');
             } else {
                 res = await adminApi.createService(formData);
-                if (res.success) toast.success('Service created successfully!');
+                if (res.success) toast.success('Category created successfully!');
             }
             setShowForm(false);
             fetchServices();
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Failed to save service');
+            toast.error(err.response?.data?.message || 'Failed to save category');
         } finally {
             setSubmitting(false);
         }
@@ -122,13 +123,13 @@ const ServiceManagement = () => {
         <div>
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1 className="fw-extrabold text-dark mb-1">Service Names</h1>
-                    <p className="text-muted">Manage main service categories (e.g., Home Care, Electrical, Plumbing)</p>
+                    <h1 className="fw-extrabold text-dark mb-1">Category Management</h1>
+                    <p className="text-muted">Manage top-level categories (e.g., Home Care, Electrical, Plumbing)</p>
                 </div>
                 {!showForm && (
                     <button onClick={handleOpenCreate} className="btn btn-dark fw-bold d-flex align-items-center gap-2 px-4 shadow-sm">
                         <FaPlus />
-                        <span>Add Service Name</span>
+                        <span>Add Category</span>
                     </button>
                 )}
             </div>
@@ -136,19 +137,19 @@ const ServiceManagement = () => {
             {showForm && (
                 <div className="card border-0 shadow-sm rounded-3 bg-white p-4 mb-4">
                     <h5 className="fw-bold mb-4 border-bottom pb-2">
-                        {editingId ? 'Edit Service Name' : 'Create New Service Name'}
+                        {editingId ? 'Edit Category' : 'Create New Category'}
                     </h5>
                     <form onSubmit={handleSubmit}>
                         <div className="row g-3 mb-4">
                             <div className="col-md-8">
-                                <label className="form-label text-muted small fw-bold">Service Name *</label>
+                                <label className="form-label text-muted small fw-bold">Category Name *</label>
                                 <input
                                     type="text"
                                     required
                                     className="form-control bg-light border-0"
                                     placeholder="e.g., Home Care, Electrical Services"
-                                    value={serviceName}
-                                    onChange={(e) => setServiceName(e.target.value)}
+                                    value={categoryName}
+                                    onChange={(e) => setCategoryName(e.target.value)}
                                 />
                             </div>
                             <div className="col-md-12">
@@ -188,7 +189,7 @@ const ServiceManagement = () => {
                                 Cancel
                             </button>
                             <button type="submit" disabled={submitting} className="btn btn-dark fw-bold px-4 py-2 shadow-sm">
-                                {submitting ? 'Saving...' : 'Save Service Name'}
+                                {submitting ? 'Saving...' : 'Save Category'}
                             </button>
                         </div>
                     </form>
@@ -204,7 +205,7 @@ const ServiceManagement = () => {
                             <thead className="table-light border-0">
                                 <tr>
                                     <th>Image</th>
-                                    <th>Service Name</th>
+                                    <th>Category Name</th>
                                     <th>Description</th>
                                     <th>Status</th>
                                     <th>Actions</th>
@@ -269,7 +270,7 @@ const ServiceManagement = () => {
                                 {services.length === 0 && (
                                     <tr>
                                         <td colSpan="5" className="text-center py-5 text-muted">
-                                            No services found. Create your first service name!
+                                            No categories found. Create your first category!
                                         </td>
                                     </tr>
                                 )}

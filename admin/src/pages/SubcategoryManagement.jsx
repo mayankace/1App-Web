@@ -126,11 +126,11 @@ const SubcategoryManagement = () => {
     };
 
     const handleDelete = async (subcategory) => {
-        if (!window.confirm(`Are you sure you want to delete the subcategory "${subcategory.subcategory}"?`)) return;
+        if (!window.confirm(`Are you sure you want to delete the service "${subcategory.subcategory}"?`)) return;
         try {
             const res = await adminApi.deleteService(subcategory.id);
             if (res.success) {
-                toast.success('Subcategory deleted successfully!');
+                toast.success('Service deleted successfully!');
                 fetchData();
             }
         } catch (err) {
@@ -164,7 +164,7 @@ const SubcategoryManagement = () => {
             let res;
             if (editingId) {
                 res = await adminApi.updateService(editingId, formData);
-                if (res.success) toast.success('Subcategory updated successfully!');
+                if (res.success) toast.success('Service updated successfully!');
             } else {
                 // Check if this combination already exists
                 const checkRes = await adminApi.getServices({
@@ -173,17 +173,17 @@ const SubcategoryManagement = () => {
                     subcategory: subcategoryName
                 });
                 if (checkRes.success && checkRes.data.services.length > 0) {
-                    toast.error('This subcategory already exists!');
+                    toast.error('This service already exists!');
                     setSubmitting(false);
                     return;
                 }
                 res = await adminApi.createService(formData);
-                if (res.success) toast.success('Subcategory created successfully!');
+                if (res.success) toast.success('Service created successfully!');
             }
             setShowForm(false);
             fetchData();
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Failed to save subcategory');
+            toast.error(err.response?.data?.message || 'Failed to save service');
         } finally {
             setSubmitting(false);
         }
@@ -197,13 +197,13 @@ const SubcategoryManagement = () => {
         <div>
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1 className="fw-extrabold text-dark mb-1">Subcategory Management</h1>
-                    <p className="text-muted">Add specific services with pricing under categories</p>
+                    <h1 className="fw-extrabold text-dark mb-1">Service Management</h1>
+                    <p className="text-muted">Add specific services with pricing under sub-categories</p>
                 </div>
                 {!showForm && (
                     <button onClick={handleOpenCreate} className="btn btn-dark fw-bold d-flex align-items-center gap-2 px-4 shadow-sm">
                         <FaPlus />
-                        <span>Add Subcategory</span>
+                        <span>Add Service</span>
                     </button>
                 )}
             </div>
@@ -211,19 +211,19 @@ const SubcategoryManagement = () => {
             {showForm && (
                 <div className="card border-0 shadow-sm rounded-3 bg-white p-4 mb-4">
                     <h5 className="fw-bold mb-4 border-bottom pb-2">
-                        {editingId ? 'Edit Subcategory' : 'Create New Subcategory'}
+                        {editingId ? 'Edit Service' : 'Create New Service'}
                     </h5>
                     <form onSubmit={handleSubmit}>
                         <div className="row g-3 mb-4">
                             <div className="col-md-4">
-                                <label className="form-label text-muted small fw-bold">Select Service *</label>
+                                <label className="form-label text-muted small fw-bold">Select Category *</label>
                                 <select
                                     required
                                     className="form-select bg-light border-0"
                                     value={selectedService}
                                     onChange={(e) => setSelectedService(e.target.value)}
                                 >
-                                    <option value="">Choose a service...</option>
+                                    <option value="">Choose a category...</option>
                                     {serviceNames.map(service => (
                                         <option key={service._id} value={service.name}>
                                             {service.name}
@@ -232,7 +232,7 @@ const SubcategoryManagement = () => {
                                 </select>
                             </div>
                             <div className="col-md-4">
-                                <label className="form-label text-muted small fw-bold">Select Category *</label>
+                                <label className="form-label text-muted small fw-bold">Select Sub-Category *</label>
                                 <select
                                     required
                                     className="form-select bg-light border-0"
@@ -240,7 +240,7 @@ const SubcategoryManagement = () => {
                                     onChange={(e) => setSelectedCategory(e.target.value)}
                                     disabled={!selectedService}
                                 >
-                                    <option value="">Choose a category...</option>
+                                    <option value="">Choose a sub-category...</option>
                                     {getCategoriesForService().map(cat => (
                                         <option key={cat.category} value={cat.category}>
                                             {cat.category}
@@ -249,7 +249,7 @@ const SubcategoryManagement = () => {
                                 </select>
                             </div>
                             <div className="col-md-4">
-                                <label className="form-label text-muted small fw-bold">Subcategory Name *</label>
+                                <label className="form-label text-muted small fw-bold">Service Name *</label>
                                 <input
                                     type="text"
                                     required
@@ -264,7 +264,7 @@ const SubcategoryManagement = () => {
                                 <textarea
                                     rows="2"
                                     className="form-control bg-light border-0"
-                                    placeholder="Detailed description of this subcategory"
+                                    placeholder="Detailed description of this service"
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                 />
@@ -328,7 +328,7 @@ const SubcategoryManagement = () => {
                                 Cancel
                             </button>
                             <button type="submit" disabled={submitting} className="btn btn-dark fw-bold px-4 py-2 shadow-sm">
-                                {submitting ? 'Saving...' : 'Save Subcategory'}
+                                {submitting ? 'Saving...' : 'Save Service'}
                             </button>
                         </div>
                     </form>
@@ -337,15 +337,15 @@ const SubcategoryManagement = () => {
 
             <div className="card border-0 shadow-sm rounded-3 bg-white p-4">
                 {loading ? (
-                    <LoadingSpinner message="Loading subcategories..." />
+                    <LoadingSpinner message="Loading services..." />
                 ) : (
                     <div className="table-responsive">
                         <table className="table table-hover align-middle">
                             <thead className="table-light border-0">
                                 <tr>
-                                    <th>Service</th>
                                     <th>Category</th>
-                                    <th>Subcategory</th>
+                                    <th>Sub-Category</th>
+                                    <th>Service</th>
                                     <th>Description</th>
                                     <th>Price</th>
                                     <th>Duration</th>
@@ -413,7 +413,7 @@ const SubcategoryManagement = () => {
                                 {subcategories.length === 0 && (
                                     <tr>
                                         <td colSpan="8" className="text-center py-5 text-muted">
-                                            No subcategories found. Create your first subcategory!
+                                            No services found. Create your first service!
                                         </td>
                                     </tr>
                                 )}
