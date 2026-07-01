@@ -1,117 +1,66 @@
 import React, { useEffect, useState } from 'react';
 import adminApi from '../services/adminApi';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { FaPlus, FaEdit, FaTrash, FaCheckCircle, FaTimesCircle, FaWrench } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaCheckCircle, FaTimesCircle, FaFolder } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 const ServiceManagement = () => {
-    const [services, setServices] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [categoryName, setCategoryName] = useState('');
-    const [description, setDescription] = useState('');
-    const [imageUrl, setImageUrl] = useState('');
-    const [imageFile, setImageFile] = useState(null);
     const [submitting, setSubmitting] = useState(false);
 
-    const fetchServices = async () => {
+    const fetchCategories = async () => {
         setLoading(true);
         try {
-            const res = await adminApi.getServices();
-            if (res.success) {
-                // Get unique service names
-                const uniqueServices = res.data.services.reduce((acc, service) => {
-                    if (!acc.find(s => s.name === service.name)) {
-                        acc.push({
-                            _id: service._id,
-                            name: service.name,
-                            description: service.description || '',
-                            imageUrl: service.imageUrl || '',
-                            isActive: service.isActive,
-                            createdAt: service.createdAt
-                        });
-                    }
-                    return acc;
-                }, []);
-                // setServices stores top-level categories (the `name` field)
-                setServices(uniqueServices);
-            }
-        } catch (err) {
-            toast.error('Failed to load services');
+            const res = await adminApi.getCategories();
+            if (res.success) setCategories(res.data.categories);
+        } catch {
+            toast.error('Failed to load categories');
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchServices();
-    }, []);
+    useEffect(() => { fetchCategories(); }, []);
 
     const handleOpenCreate = () => {
         setEditingId(null);
         setCategoryName('');
-        setDescription('');
-        setImageUrl('');
-        setImageFile(null);
         setShowForm(true);
     };
 
-    const handleOpenEdit = (service) => {
-        setEditingId(service._id);
-        setCategoryName(service.name);
-        setDescription(service.description || '');
-        setImageUrl(service.imageUrl || '');
-        setImageFile(null);
+    const handleOpenEdit = (cat) => {
+        setEditingId(cat._id);
+        setCategoryName(cat.name);
         setShowForm(true);
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this category? This will also delete all associated sub-categories and services.')) return;
+        if (!window.confirm('Delete this category?')) return;
         try {
-            const res = await adminApi.deleteService(id);
-            if (res.success) {
-                toast.success('Service deleted successfully!');
-                fetchServices();
-            }
-        } catch (err) {
-            toast.error('Deletion failed');
-        }
+            const res = await adminApi.deleteCategory(id);
+            if (res.success) { toast.success('Category deleted!'); fetchCategories(); }
+        } catch { toast.error('Deletion failed'); }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!categoryName.trim()) {
-            toast.error('Category name is required!');
-            return;
-        }
-
+        if (!categoryName.trim()) { toast.error('Category name is required!'); return; }
         setSubmitting(true);
         try {
-            const formData = new FormData();
-            formData.append('name', categoryName);
-            formData.append('description', description || '');
-            formData.append('price', 0);
-            formData.append('duration', 30);
-            formData.append('category', 'General');
-            formData.append('subcategory', 'General');
-
-            if (imageFile) {
-                formData.append('image', imageFile);
-            } else if (imageUrl) {
-                formData.append('imageUrl', imageUrl);
-            }
-
             let res;
             if (editingId) {
-                res = await adminApi.updateService(editingId, formData);
-                if (res.success) toast.success('Category updated successfully!');
+                res = await adminApi.updateCategory(editingId, categoryName);
+                if (res.success) toast.success('Category updated!');
             } else {
-                res = await adminApi.createService(formData);
-                if (res.success) toast.success('Category created successfully!');
+                res = await adminApi.createCategory(categoryName);
+                if (res.success) toast.success('Category created!');
             }
             setShowForm(false);
-            fetchServices();
+            fetchCategories();
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to save category');
         } finally {
@@ -128,8 +77,7 @@ const ServiceManagement = () => {
                 </div>
                 {!showForm && (
                     <button onClick={handleOpenCreate} className="btn btn-dark fw-bold d-flex align-items-center gap-2 px-4 shadow-sm">
-                        <FaPlus />
-                        <span>Add Category</span>
+                        <FaPlus /><span>Add Category</span>
                     </button>
                 )}
             </div>
@@ -152,42 +100,9 @@ const ServiceManagement = () => {
                                     onChange={(e) => setCategoryName(e.target.value)}
                                 />
                             </div>
-                            <div className="col-md-12">
-                                <label className="form-label text-muted small fw-bold">Description</label>
-                                <textarea
-                                    rows="2"
-                                    className="form-control bg-light border-0"
-                                    placeholder="Brief description of this service"
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                />
-                            </div>
-                            <div className="col-md-6">
-                                <label className="form-label text-muted small fw-bold">Image URL (Optional)</label>
-                                <input
-                                    type="text"
-                                    className="form-control bg-light border-0"
-                                    placeholder="https://example.com/image.jpg"
-                                    value={imageUrl}
-                                    onChange={(e) => setImageUrl(e.target.value)}
-                                    disabled={!!imageFile}
-                                />
-                            </div>
-                            <div className="col-md-6">
-                                <label className="form-label text-muted small fw-bold">Or Upload Image</label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="form-control bg-light border-0"
-                                    onChange={(e) => setImageFile(e.target.files[0])}
-                                    disabled={!!imageUrl}
-                                />
-                            </div>
                         </div>
                         <div className="d-flex gap-2 justify-content-end">
-                            <button type="button" onClick={() => setShowForm(false)} className="btn btn-outline-secondary px-4 py-2">
-                                Cancel
-                            </button>
+                            <button type="button" onClick={() => setShowForm(false)} className="btn btn-outline-secondary px-4 py-2">Cancel</button>
                             <button type="submit" disabled={submitting} className="btn btn-dark fw-bold px-4 py-2 shadow-sm">
                                 {submitting ? 'Saving...' : 'Save Category'}
                             </button>
@@ -197,82 +112,41 @@ const ServiceManagement = () => {
             )}
 
             <div className="card border-0 shadow-sm rounded-3 bg-white p-4">
-                {loading ? (
-                    <LoadingSpinner message="Loading services..." />
-                ) : (
+                {loading ? <LoadingSpinner message="Loading categories..." /> : (
                     <div className="table-responsive">
                         <table className="table table-hover align-middle">
                             <thead className="table-light border-0">
                                 <tr>
-                                    <th>Image</th>
                                     <th>Category Name</th>
-                                    <th>Description</th>
                                     <th>Status</th>
+                                    <th>Created At</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {services.map((service) => (
-                                    <tr key={service._id}>
-                                        <td>
-                                            {service.imageUrl ? (
-                                                <img
-                                                    src={service.imageUrl}
-                                                    alt={service.name}
-                                                    className="rounded object-fit-cover"
-                                                    style={{ width: '48px', height: '48px' }}
-                                                />
-                                            ) : (
-                                                <div className="bg-light rounded d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px' }}>
-                                                    <FaWrench className="text-muted" />
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="fw-bold text-dark">{service.name}</td>
-                                        <td className="text-muted" style={{ maxWidth: '300px' }}>
-                                            {service.description || 'No description'}
+                                {categories.map((cat) => (
+                                    <tr key={cat._id}>
+                                        <td className="fw-bold text-dark">
+                                            <FaFolder className="text-primary me-2" />{cat.name}
                                         </td>
                                         <td>
-                                            {service.isActive ? (
-                                                <span className="text-success d-flex align-items-center gap-1 small fw-bold">
-                                                    <FaCheckCircle />
-                                                    <span>Active</span>
-                                                </span>
+                                            {cat.isActive ? (
+                                                <span className="text-success d-flex align-items-center gap-1 small fw-bold"><FaCheckCircle /><span>Active</span></span>
                                             ) : (
-                                                <span className="text-danger d-flex align-items-center gap-1 small fw-bold">
-                                                    <FaTimesCircle />
-                                                    <span>Inactive</span>
-                                                </span>
+                                                <span className="text-danger d-flex align-items-center gap-1 small fw-bold"><FaTimesCircle /><span>Inactive</span></span>
                                             )}
                                         </td>
+                                        <td className="text-muted small">{new Date(cat.createdAt).toLocaleDateString()}</td>
                                         <td>
                                             <div className="d-flex gap-1">
-                                                <button
-                                                    onClick={() => handleOpenEdit(service)}
-                                                    className="btn btn-sm btn-light border text-primary"
-                                                    title="Edit"
-                                                >
-                                                    <FaEdit />
-                                                </button>
-                                                {service.isActive && (
-                                                    <button
-                                                        onClick={() => handleDelete(service._id)}
-                                                        className="btn btn-sm btn-light border text-danger"
-                                                        title="Delete"
-                                                    >
-                                                        <FaTrash />
-                                                    </button>
-                                                )}
+                                                <button onClick={() => handleOpenEdit(cat)} className="btn btn-sm btn-light border text-primary" title="Edit"><FaEdit /></button>
+                                                <button onClick={() => handleDelete(cat._id)} className="btn btn-sm btn-light border text-danger" title="Delete"><FaTrash /></button>
                                             </div>
                                         </td>
                                     </tr>
                                 ))}
-                                {services.length === 0 && (
-                                    <tr>
-                                        <td colSpan="5" className="text-center py-5 text-muted">
-                                            No categories found. Create your first category!
-                                        </td>
-                                    </tr>
+                                {categories.length === 0 && (
+                                    <tr><td colSpan="4" className="text-center py-5 text-muted">No categories found. Create your first category!</td></tr>
                                 )}
                             </tbody>
                         </table>

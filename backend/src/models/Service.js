@@ -19,14 +19,14 @@ const serviceSchema = new mongoose.Schema({
         required: [true, 'Please provide estimated duration (in minutes)']
     },
     category: {
-        type: String,
-        required: [true, 'Please provide service category'],
-        trim: true
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category',
+        required: [true, 'Please provide service category']
     },
     subcategory: {
-        type: String,
-        required: [true, 'Please provide service subcategory'],
-        trim: true
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'SubCategory',
+        required: [true, 'Please provide service subcategory']
     },
     imageUrl: {
         type: String,
@@ -50,6 +50,6 @@ const serviceSchema = new mongoose.Schema({
     timestamps: true
 });
 
-serviceSchema.index({ name: 1, category: 1, subcategory: 1 });
+serviceSchema.index({ category: 1, subcategory: 1 });
 
 module.exports = mongoose.model('Service', serviceSchema);

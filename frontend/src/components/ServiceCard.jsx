@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { FaClock, FaRupeeSign, FaShoppingCart } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import { resolveImageUrl } from '../services/api';
 
 const ServiceCard = ({ service }) => {
     const { addToCart } = useContext(CartContext);
@@ -10,14 +11,14 @@ const ServiceCard = ({ service }) => {
     const handleAddToCart = (e) => {
         e.preventDefault(); // Prevents navigation if the card has a link wrapper
         addToCart(service);
-        toast.success(`${service.subcategory || service.name} added to cart!`);
+        toast.success(`${service.subcategory?.name || service.name} added to cart!`);
     };
 
     return (
         <div className="card h-100 shadow-sm border-0 rounded-3 overflow-hidden hover-shadow transition-all">
             <div className="position-relative" style={{ height: '200px' }}>
                 <img
-                    src={service.imageUrl || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=400'}
+                    src={resolveImageUrl(service.imageUrl) || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=400'}
                     alt={service.name}
                     className="w-100 h-100 object-fit-cover"
                 />
@@ -28,9 +29,9 @@ const ServiceCard = ({ service }) => {
 
             <div className="card-body d-flex flex-column p-4">
                 <h5 className="card-title fw-bold text-dark mb-2 text-truncate-2" style={{ height: '48px', lineHeight: '24px' }}>
-                    {service.subcategory || service.name}
+                    {service.subcategory?.name || service.name}
                 </h5>
-                <div className="text-muted small fw-semibold mb-2">{service.category}</div>
+                <div className="text-muted small fw-semibold mb-2">{service.category?.name || service.category}</div>
                 <p className="card-text text-muted mb-4 text-truncate-3" style={{ height: '72px', fontSize: '0.9rem' }}>
                     {service.description}
                 </p>
@@ -47,7 +48,7 @@ const ServiceCard = ({ service }) => {
                 </div>
 
                 <div className="d-flex gap-2">
-                    <Link to={`/services/${service._id}`} className="btn btn-outline-secondary flex-grow-1 fw-semibold py-2">
+                    <Link to={`/service/${service._id}`} className="btn btn-outline-secondary flex-grow-1 fw-semibold py-2">
                         Details
                     </Link>
                     <button

@@ -5,6 +5,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { CartContext } from '../context/CartContext';
 import { FaClock, FaRupeeSign, FaShoppingCart, FaArrowLeft, FaShieldAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import { resolveImageUrl } from '../services/api';
 
 const ServiceDetail = () => {
     const { id } = useParams();
@@ -37,7 +38,7 @@ const ServiceDetail = () => {
 
     const handleAddToCart = () => {
         addToCart(service, quantity);
-        toast.success(`${quantity} x ${service.subcategory || service.name} added to cart!`);
+        toast.success(`${quantity} x ${service.subcategory?.name || service.name} added to cart!`);
     };
 
     if (loading) {
@@ -65,7 +66,7 @@ const ServiceDetail = () => {
                 <div className="col-lg-6">
                     <div className="rounded-4 overflow-hidden shadow-sm" style={{ maxHeight: '400px' }}>
                         <img
-                            src={service.imageUrl || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=800'}
+                            src={resolveImageUrl(service.imageUrl) || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=800'}
                             alt={service.name}
                             className="w-100 h-100 object-fit-cover"
                             style={{ minHeight: '350px' }}
@@ -77,9 +78,9 @@ const ServiceDetail = () => {
                 <div className="col-lg-6">
                     <div className="d-flex flex-column h-100">
                         <span className="badge bg-warning text-dark text-uppercase px-3 py-2 fs-8 fw-bold mb-3 align-self-start">
-                            {service.name} / {service.category}
+                            {service.name} / {service.category?.name || service.category}
                         </span>
-                        <h1 className="fw-extrabold text-dark mb-3">{service.subcategory || service.name}</h1>
+                        <h1 className="fw-extrabold text-dark mb-3">{service.subcategory?.name || service.name}</h1>
 
                         <div className="d-flex align-items-center gap-4 mb-4 pb-4 border-bottom">
                             <div className="d-flex align-items-center gap-1 text-primary fw-bold fs-3">

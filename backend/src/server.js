@@ -24,7 +24,7 @@ const dns = require('dns');
 dns.setServers(['1.1.1.1', '8.8.8.8']);
 // Database connection
 
-mongoose.connect("mongodb://127.0.0.1:27017/vmarc")
+mongoose.connect(process.env.MONGODB_URI)
     .then(async () => {
         console.log('✅ MongoDB connected successfully');
         try {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import serviceService from '../services/serviceService';
+import { resolveImageUrl } from '../services/api';
 import CategoryPopup from '../components/CategoryPopup';
 import {
     FaSearch, FaStar, FaUsers, FaTag, FaHome, FaBriefcase,
@@ -95,17 +96,19 @@ const Home = () => {
                 );
                 setMostBooked(sorted.slice(0, 4));
 
-                // Build subcategory map from services
+                // Build subcategory map from services (now category/subcategory are objects)
                 const subMap = {};
                 allServices.forEach(s => {
-                    if (!s.category || !s.subcategory || s.subcategory === 'General') return;
-                    if (!subMap[s.category]) subMap[s.category] = new Set();
-                    subMap[s.category].add(s.subcategory);
+                    const catName = s.category?.name;
+                    const subName = s.subcategory?.name;
+                    const subId = s.subcategory?._id;
+                    if (!catName || !subName || !subId) return;
+                    if (!subMap[catName]) subMap[catName] = [];
+                    if (!subMap[catName].find(x => x._id === subId)) {
+                        subMap[catName].push({ _id: subId, name: subName });
+                    }
                 });
-                // Convert Sets to arrays
-                const finalMap = {};
-                Object.keys(subMap).forEach(k => { finalMap[k] = Array.from(subMap[k]); });
-                setSubcategoryMap(finalMap);
+                setSubcategoryMap(subMap);
             }
 
             // Fetch categories
@@ -128,27 +131,25 @@ const Home = () => {
     };
 
     const handleCategoryClick = (category) => {
-        // Normalize label (remove line breaks)
         const normalizedCategory = category.replace(/\n/g, ' ');
-
-        // Find matching subcategories from the map
-        // Try exact match first, then partial match
-        let subcategories = subcategoryMap[normalizedCategory] || [];
-
-        if (subcategories.length === 0) {
-            // Try partial key match (e.g. hero label "IT & Technology" vs key "IT & Technology")
+        let subcats = subcategoryMap[normalizedCategory] || [];
+        if (subcats.length === 0) {
             const matchedKey = Object.keys(subcategoryMap).find(
                 k => k.toLowerCase().includes(normalizedCategory.toLowerCase()) ||
                     normalizedCategory.toLowerCase().includes(k.toLowerCase())
             );
-            if (matchedKey) subcategories = subcategoryMap[matchedKey];
+            if (matchedKey) subcats = subcategoryMap[matchedKey];
         }
-
-        if (subcategories.length > 0) {
-            setPopupCategory({ label: normalizedCategory, subcategories });
+        if (subcats.length > 0) {
+            setPopupCategory({ label: normalizedCategory, subcategories: subcats });
         } else {
-            // No subcategories found — navigate directly
-            navigate(`/services?category=${encodeURIComponent(normalizedCategory)}`);
+            // Navigate using category ID if found, otherwise use name as fallback
+            const cat = categories.find(c => c.name.toLowerCase() === normalizedCategory.toLowerCase());
+            if (cat) {
+                navigate(`/services?category=${cat._id}`);
+            } else {
+                navigate(`/services?search=${encodeURIComponent(normalizedCategory)}`);
+            }
         }
     };
 
@@ -171,12 +172,14 @@ const Home = () => {
         navigate(`/service/${serviceId}`);
     };
 
-    const handleViewAllServices = (category) => {
-        navigate(`/services?category=${encodeURIComponent(category)}`);
+    const handleViewAllServices = (categoryName) => {
+        const cat = categories.find(c => c.name === categoryName);
+        if (cat) navigate(`/services?category=${cat._id}`);
+        else navigate(`/services`);
     };
 
     const getCategoryServices = (categoryName) => {
-        return services.filter(s => s.category === categoryName && s.subcategory !== 'General').slice(0, 4);
+        return services.filter(s => s.category?.name === categoryName).slice(0, 4);
     };
 
     const renderStars = (rating) => {
@@ -357,19 +360,25 @@ const Home = () => {
             <section className="py-5 bg-white">
                 <div className="container">
                     <h2 className="fw-bold mb-4">New and noteworthy</h2>
-                    <div className="d-flex gap-4 overflow-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-                        {featuredServices.map((service, idx) => (
+                    <div
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(5, 1fr)',
+                            gap: '20px',
+                        }}
+                    >
+                        {featuredServices.slice(0, 5).map((service, idx) => (
                             <div
                                 key={idx}
                                 onClick={() => handleServiceClick(service._id)}
-                                style={{ cursor: 'pointer', minWidth: '200px', flex: '0 0 auto' }}
+                                style={{ cursor: 'pointer', minWidth: 0 }}
                             >
                                 <div
                                     className="rounded-4 overflow-hidden mb-3"
                                     style={{ height: '200px', background: '#f0f0f0' }}
                                 >
                                     {service.imageUrl ? (
-                                        <img src={service.imageUrl} alt={service.subcategory || service.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory || service.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
                                     ) : (
                                         <div className="w-100 h-100 d-flex align-items-center justify-content-center">
                                             <FaTools size={40} className="text-muted" />
@@ -377,8 +386,8 @@ const Home = () => {
                                     )}
                                 </div>
                                 <div className="d-flex align-items-center justify-content-between">
-                                    <span className="fw-semibold text-dark" style={{ fontSize: '15px' }}>{service.subcategory || service.name}</span>
-                                    {idx === featuredServices.length - 1 && (
+                                    <span className="fw-semibold text-dark" style={{ fontSize: '15px' }}>{service.subcategory?.name || service.name}</span>
+                                    {idx === featuredServices.slice(0, 5).length - 1 && (
                                         <span className="text-success fw-semibold small ms-2" style={{ whiteSpace: 'nowrap' }}>● In 45 mins</span>
                                     )}
                                 </div>
@@ -392,26 +401,23 @@ const Home = () => {
             <section className="py-5 bg-white">
                 <div className="container">
                     <h2 className="fw-bold mb-4">Most booked services</h2>
-                    <div className="d-flex gap-4 overflow-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-                        {mostBooked.map((service, idx) => (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                        {mostBooked.slice(0, 4).map((service, idx) => (
                             <div
                                 key={idx}
                                 onClick={() => handleServiceClick(service._id)}
-                                style={{ cursor: 'pointer', minWidth: '200px', flex: '0 0 auto' }}
+                                style={{ cursor: 'pointer', minWidth: 0 }}
                             >
-                                <div
-                                    className="rounded-4 overflow-hidden mb-3"
-                                    style={{ height: '200px', background: '#f0f0f0' }}
-                                >
+                                <div className="rounded-4 overflow-hidden mb-3" style={{ height: '200px', background: '#f0f0f0' }}>
                                     {service.imageUrl ? (
-                                        <img src={service.imageUrl} alt={service.subcategory || service.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory || service.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
                                     ) : (
                                         <div className="w-100 h-100 d-flex align-items-center justify-content-center">
                                             <FaTools size={40} className="text-muted" />
                                         </div>
                                     )}
                                 </div>
-                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory || service.name}</div>
+                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory?.name || service.name}</div>
                                 <div className="d-flex align-items-center gap-2 mb-1">
                                     <FaStar className="text-dark" style={{ fontSize: '12px' }} />
                                     <span className="small fw-semibold">{service.ratingsAverage || 4.8}</span>
@@ -497,23 +503,19 @@ const Home = () => {
                             See all
                         </button>
                     </div>
-                    <div className="d-flex gap-4 overflow-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
                         {getCategoryServices('Cleaning').map((service, idx) => (
-                            <div
-                                key={idx}
-                                onClick={() => handleServiceClick(service._id)}
-                                style={{ cursor: 'pointer', minWidth: '220px', flex: '0 0 auto' }}
-                            >
+                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: 0 }}>
                                 <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
                                     {service.imageUrl ? (
-                                        <img src={service.imageUrl} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
                                     ) : (
                                         <div className="w-100 h-100 d-flex align-items-center justify-content-center">
                                             <FaTools size={40} className="text-muted" />
                                         </div>
                                     )}
                                 </div>
-                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory}</div>
+                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory?.name}</div>
                                 <div className="d-flex align-items-center gap-2">
                                     <span className="fw-bold">₹{service.price}</span>
                                     {service.originalPrice && (
@@ -561,17 +563,17 @@ const Home = () => {
                         </div>
                         <button onClick={() => handleViewAllServices('AC & Appliance')} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
                     </div>
-                    <div className="d-flex gap-4 overflow-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
                         {getCategoryServices('AC & Appliance').map((service, idx) => (
-                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: '220px', flex: '0 0 auto' }}>
+                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: 0 }}>
                                 <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
                                     {service.imageUrl ? (
-                                        <img src={service.imageUrl} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
                                     ) : (
                                         <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaTools size={40} className="text-muted" /></div>
                                     )}
                                 </div>
-                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory}</div>
+                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory?.name}</div>
                                 <div className="d-flex align-items-center gap-2">
                                     <span className="fw-bold">₹{service.price}</span>
                                     {service.originalPrice && <span className="text-muted small text-decoration-line-through">₹{service.originalPrice}</span>}
@@ -592,17 +594,17 @@ const Home = () => {
                         </div>
                         <button onClick={() => handleViewAllServices('Handyman')} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
                     </div>
-                    <div className="d-flex gap-4 overflow-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
                         {getCategoryServices('Handyman').map((service, idx) => (
-                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: '220px', flex: '0 0 auto' }}>
+                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: 0 }}>
                                 <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
                                     {service.imageUrl ? (
-                                        <img src={service.imageUrl} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
                                     ) : (
                                         <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaWrench size={40} className="text-muted" /></div>
                                     )}
                                 </div>
-                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory}</div>
+                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory?.name}</div>
                                 <div className="d-flex align-items-center gap-2">
                                     <span className="fw-bold">₹{service.price}</span>
                                     {service.originalPrice && <span className="text-muted small text-decoration-line-through">₹{service.originalPrice}</span>}
@@ -623,17 +625,17 @@ const Home = () => {
                         </div>
                         <button onClick={() => handleViewAllServices('Beauty & Personal Care')} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
                     </div>
-                    <div className="d-flex gap-4 overflow-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
                         {getCategoryServices('Beauty & Personal Care').map((service, idx) => (
-                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: '220px', flex: '0 0 auto' }}>
-                                <div className="rounded-4 overflow-hidden mb-3 position-relative" style={{ height: '220px', background: '#f0f0f0' }}>
+                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: 0 }}>
+                                <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
                                     {service.imageUrl ? (
-                                        <img src={service.imageUrl} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
                                     ) : (
                                         <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaPalette size={40} className="text-muted" /></div>
                                     )}
                                 </div>
-                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory}</div>
+                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory?.name}</div>
                                 <div className="d-flex align-items-center gap-2">
                                     <span className="fw-bold">₹{service.price}</span>
                                     {service.originalPrice && <span className="text-muted small text-decoration-line-through">₹{service.originalPrice}</span>}
@@ -681,17 +683,17 @@ const Home = () => {
                         </div>
                         <button onClick={() => handleViewAllServices('Grooming')} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
                     </div>
-                    <div className="d-flex gap-4 overflow-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
                         {getCategoryServices('Grooming').map((service, idx) => (
-                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: '220px', flex: '0 0 auto' }}>
+                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: 0 }}>
                                 <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
                                     {service.imageUrl ? (
-                                        <img src={service.imageUrl} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
                                     ) : (
                                         <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaUser size={40} className="text-muted" /></div>
                                     )}
                                 </div>
-                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory}</div>
+                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory?.name}</div>
                                 <div className="d-flex align-items-center gap-2">
                                     <span className="fw-bold">₹{service.price}</span>
                                     {service.originalPrice && <span className="text-muted small text-decoration-line-through">₹{service.originalPrice}</span>}
@@ -712,17 +714,17 @@ const Home = () => {
                         </div>
                         <button onClick={() => handleViewAllServices('Ride Services')} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
                     </div>
-                    <div className="d-flex gap-4 overflow-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
                         {getCategoryServices('Ride Services').map((service, idx) => (
-                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: '220px', flex: '0 0 auto' }}>
+                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: 0 }}>
                                 <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
                                     {service.imageUrl ? (
-                                        <img src={service.imageUrl} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
                                     ) : (
                                         <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaCar size={40} className="text-muted" /></div>
                                     )}
                                 </div>
-                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory}</div>
+                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory?.name}</div>
                                 <div className="d-flex align-items-center gap-2">
                                     <span className="fw-bold">₹{service.price}</span>
                                     {service.originalPrice && <span className="text-muted small text-decoration-line-through">₹{service.originalPrice}</span>}
@@ -759,9 +761,9 @@ const Home = () => {
                                         >
                                             <div>
                                                 <div className="mb-3 p-2 rounded-2 d-inline-block" style={{ background: '#f5f5f5' }}>
-                                                    {categoryIcons[service.category] || <FaBriefcase size={18} className="text-muted" />}
+                                                    {categoryIcons[service.category?.name] || <FaBriefcase size={18} className="text-muted" />}
                                                 </div>
-                                                <div className="fw-semibold mb-1" style={{ fontSize: '14px', lineHeight: 1.4 }}>{service.subcategory || service.name}</div>
+                                                <div className="fw-semibold mb-1" style={{ fontSize: '14px', lineHeight: 1.4 }}>{service.subcategory?.name || service.name}</div>
                                                 <div className="text-muted" style={{ fontSize: '12px', lineHeight: 1.5 }}>
                                                     {service.description ? service.description.slice(0, 60) + (service.description.length > 60 ? '.' : '') : 'Strategic growth solutions for your enterprise.'}
                                                 </div>
@@ -992,9 +994,9 @@ const Home = () => {
                                         >
                                             <div>
                                                 <div className="mb-3 p-2 rounded-2 d-inline-block" style={{ background: '#f5f5f5' }}>
-                                                    {categoryIcons[service.category] || <FaBriefcase size={18} className="text-muted" />}
+                                                    {categoryIcons[service.category?.name] || <FaBriefcase size={18} className="text-muted" />}
                                                 </div>
-                                                <div className="fw-semibold mb-1" style={{ fontSize: '14px', lineHeight: 1.4 }}>{service.subcategory || service.name}</div>
+                                                <div className="fw-semibold mb-1" style={{ fontSize: '14px', lineHeight: 1.4 }}>{service.subcategory?.name || service.name}</div>
                                                 <div className="text-muted" style={{ fontSize: '12px', lineHeight: 1.5 }}>
                                                     {service.description ? service.description.slice(0, 60) + (service.description.length > 60 ? '.' : '') : 'Strategic growth solutions for your enterprise.'}
                                                 </div>
@@ -1070,7 +1072,7 @@ const Home = () => {
                             <div key={idx} onClick={() => handleServiceClick(service._id)} className="col-lg-4 col-md-6" style={{ cursor: 'pointer' }}>
                                 <div className="rounded-4 overflow-hidden mb-3 position-relative" style={{ height: '220px', background: '#f0f0f0' }}>
                                     {service.imageUrl ? (
-                                        <img src={service.imageUrl} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
                                     ) : (
                                         <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaHeartbeat size={40} className="text-muted" /></div>
                                     )}
@@ -1079,7 +1081,7 @@ const Home = () => {
                                     )}
                                 </div>
                                 <div className="d-flex align-items-center justify-content-between mb-1">
-                                    <div className="fw-bold" style={{ fontSize: '15px' }}>{service.subcategory || service.name}</div>
+                                    <div className="fw-bold" style={{ fontSize: '15px' }}>{service.subcategory?.name || service.name}</div>
                                     <div className="d-flex align-items-center gap-1">
                                         <FaStar style={{ color: '#f5a623', fontSize: '12px' }} />
                                         <span className="small fw-semibold">{service.ratingsAverage || 4.8}</span>
@@ -1133,7 +1135,7 @@ const Home = () => {
                             <div key={idx} onClick={() => handleServiceClick(service._id)} className="col-lg-3 col-md-6" style={{ cursor: 'pointer' }}>
                                 <div className="rounded-4 overflow-hidden mb-3 position-relative" style={{ height: '220px', background: '#f0f0f0' }}>
                                     {service.imageUrl ? (
-                                        <img src={service.imageUrl} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
                                     ) : (
                                         <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaHeartbeat size={40} className="text-muted" /></div>
                                     )}
@@ -1142,7 +1144,7 @@ const Home = () => {
                                     )}
                                 </div>
                                 <div className="d-flex align-items-center justify-content-between mb-1">
-                                    <div className="fw-bold" style={{ fontSize: '15px' }}>{service.subcategory || service.name}</div>
+                                    <div className="fw-bold" style={{ fontSize: '15px' }}>{service.subcategory?.name || service.name}</div>
                                     <div className="d-flex align-items-center gap-1">
                                         <FaStar style={{ color: '#f5a623', fontSize: '12px' }} />
                                         <span className="small fw-semibold">{service.ratingsAverage || 4.8}</span>
@@ -1314,7 +1316,7 @@ const Home = () => {
                             <div key={idx} onClick={() => handleServiceClick(service._id)} className="col-lg-3 col-md-6" style={{ cursor: 'pointer' }}>
                                 <div className="rounded-4 overflow-hidden mb-3 position-relative" style={{ height: '220px', background: '#f0f0f0' }}>
                                     {service.imageUrl ? (
-                                        <img src={service.imageUrl} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
                                     ) : (
                                         <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaHeartbeat size={40} className="text-muted" /></div>
                                     )}
@@ -1323,7 +1325,7 @@ const Home = () => {
                                     )}
                                 </div>
                                 <div className="d-flex align-items-center justify-content-between mb-1">
-                                    <div className="fw-bold" style={{ fontSize: '15px' }}>{service.subcategory || service.name}</div>
+                                    <div className="fw-bold" style={{ fontSize: '15px' }}>{service.subcategory?.name || service.name}</div>
                                     <div className="d-flex align-items-center gap-1">
                                         <FaStar style={{ color: '#f5a623', fontSize: '12px' }} />
                                         <span className="small fw-semibold">{service.ratingsAverage || 4.8}</span>

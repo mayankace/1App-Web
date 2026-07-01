@@ -111,12 +111,50 @@ const adminApi = {
         return res.data;
     },
 
+    // ─── CATEGORY ────────────────────────────────────────────────────────────────
     getCategories: async () => {
         const res = await API.get('/services/categories');
         return res.data;
     },
 
-    // Add to adminApi object
+    createCategory: async (name) => {
+        const res = await API.post('/services/categories', { name });
+        return res.data;
+    },
+
+    updateCategory: async (id, name) => {
+        const res = await API.put(`/services/categories/${id}`, { name });
+        return res.data;
+    },
+
+    deleteCategory: async (id) => {
+        const res = await API.delete(`/services/categories/${id}`);
+        return res.data;
+    },
+
+    // ─── SUBCATEGORY ─────────────────────────────────────────────────────────────
+    getSubCategories: async (categoryId = '') => {
+        const url = categoryId ? `/services/subcategories?category=${categoryId}` : '/services/subcategories';
+        const res = await API.get(url);
+        return res.data;
+    },
+
+    createSubCategory: async (name, categoryId) => {
+        const res = await API.post('/services/subcategories', { name, categoryId });
+        return res.data;
+    },
+
+    updateSubCategory: async (id, data) => {
+        const res = await API.put(`/services/subcategories/${id}`, data);
+        return res.data;
+    },
+
+    deleteSubCategory: async (id) => {
+        const res = await API.delete(`/services/subcategories/${id}`);
+        return res.data;
+    },
+
+    // ─── SERVICE HIERARCHY ───────────────────────────────────────────────────────
     getServiceHierarchy: async () => {
         const res = await API.get('/services/hierarchy');
         return res.data;

@@ -157,9 +157,9 @@ const CategoryPopup = ({ category, subcategories, onClose }) => {
         return () => { document.body.style.overflow = ''; };
     }, []);
 
-    const handleSubcategoryClick = (subcategory) => {
+    const handleSubcategoryClick = (sub) => {
         onClose();
-        navigate(`/services?category=${encodeURIComponent(category)}&subcategory=${encodeURIComponent(subcategory)}`);
+        navigate(`/services?category=${encodeURIComponent(category)}&subcategory=${encodeURIComponent(sub._id)}`);
     };
 
     return (
@@ -225,7 +225,7 @@ const CategoryPopup = ({ category, subcategories, onClose }) => {
                     }}>
                         {subcategories.map((sub, idx) => (
                             <div
-                                key={idx}
+                                key={sub._id || idx}
                                 onClick={() => handleSubcategoryClick(sub)}
                                 style={{
                                     cursor: 'pointer',
@@ -244,7 +244,6 @@ const CategoryPopup = ({ category, subcategories, onClose }) => {
                                     e.currentTarget.style.boxShadow = 'none';
                                 }}
                             >
-                                {/* Icon */}
                                 <div style={{
                                     width: '60px', height: '60px',
                                     borderRadius: '12px',
@@ -255,7 +254,7 @@ const CategoryPopup = ({ category, subcategories, onClose }) => {
                                     color: '#444',
                                     boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
                                 }}>
-                                    {getSubcategoryIcon(sub, category)}
+                                    {getSubcategoryIcon(sub.name, category)}
                                 </div>
                                 <div style={{
                                     fontSize: '12px',
@@ -264,7 +263,7 @@ const CategoryPopup = ({ category, subcategories, onClose }) => {
                                     lineHeight: 1.4,
                                     wordBreak: 'break-word',
                                 }}>
-                                    {sub}
+                                    {sub.name}
                                 </div>
                             </div>
                         ))}

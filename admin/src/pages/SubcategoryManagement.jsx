@@ -3,22 +3,22 @@ import adminApi from '../services/adminApi';
 import LoadingSpinner from '../components/LoadingSpinner';
 import {
     FaPlus, FaEdit, FaTrash, FaLayerGroup, FaRupeeSign,
-    FaClock, FaCheckCircle, FaTimesCircle, FaArrowRight
+    FaClock, FaCheckCircle, FaTimesCircle
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 const SubcategoryManagement = () => {
-    const [subcategories, setSubcategories] = useState([]);
-    const [serviceNames, setServiceNames] = useState([]);
+    const [services, setServices] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [subcategories, setSubcategories] = useState([]);
+    const [filteredSubcategories, setFilteredSubcategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
 
-    // Form fields
-    const [selectedService, setSelectedService] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('');
-    const [subcategoryName, setSubcategoryName] = useState('');
+    const [selectedCategoryId, setSelectedCategoryId] = useState('');
+    const [selectedSubcategoryId, setSelectedSubcategoryId] = useState('');
+    const [serviceName, setServiceName] = useState('');
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState('');
     const [duration, setDuration] = useState('');
@@ -29,156 +29,96 @@ const SubcategoryManagement = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const servicesRes = await adminApi.getServices();
-            if (servicesRes.success) {
-                // Get unique service names
-                const uniqueServices = servicesRes.data.services.reduce((acc, service) => {
-                    if (!acc.find(s => s.name === service.name)) {
-                        acc.push({
-                            _id: service._id,
-                            name: service.name
-                        });
-                    }
-                    return acc;
-                }, []);
-                setServiceNames(uniqueServices);
-
-                // Get unique categories with their service association
-                const categoryMap = {};
-                const subcategoryList = [];
-                servicesRes.data.services.forEach(service => {
-                    if (service.category && service.category !== 'General') {
-                        const key = `${service.name}|${service.category}`;
-                        if (!categoryMap[key]) {
-                            categoryMap[key] = {
-                                serviceName: service.name,
-                                category: service.category
-                            };
-                        }
-                    }
-
-                    // Collect subcategories
-                    if (service.subcategory && service.subcategory !== 'General') {
-                        subcategoryList.push({
-                            id: service._id,
-                            serviceName: service.name,
-                            category: service.category,
-                            subcategory: service.subcategory,
-                            description: service.description || '',
-                            price: service.price || 0,
-                            duration: service.duration || 30,
-                            imageUrl: service.imageUrl || '',
-                            isActive: service.isActive
-                        });
-                    }
-                });
-                setCategories(Object.values(categoryMap));
-                setSubcategories(subcategoryList);
-            }
-        } catch (err) {
+            const [svcRes, catRes, subRes] = await Promise.all([
+                adminApi.getServices(),
+                adminApi.getCategories(),
+                adminApi.getSubCategories()
+            ]);
+            if (svcRes.success) setServices(svcRes.data.services);
+            if (catRes.success) setCategories(catRes.data.categories);
+            if (subRes.success) setSubcategories(subRes.data.subcategories);
+        } catch {
             toast.error('Failed to load data');
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    useEffect(() => { fetchData(); }, []);
 
-    // Update categories when service changes
+    // Filter subcategories when category changes
     useEffect(() => {
-        if (selectedService) {
-            const filteredCategories = categories.filter(c => c.serviceName === selectedService);
-            // Reset category selection
-            if (filteredCategories.length === 0) {
-                setSelectedCategory('');
-            } else if (!filteredCategories.find(c => c.category === selectedCategory)) {
-                setSelectedCategory('');
-            }
+        if (selectedCategoryId) {
+            setFilteredSubcategories(subcategories.filter(s => s.category?._id === selectedCategoryId));
+            setSelectedSubcategoryId('');
+        } else {
+            setFilteredSubcategories([]);
         }
-    }, [selectedService, categories]);
+    }, [selectedCategoryId, subcategories]);
 
-    const handleOpenCreate = () => {
+    const resetForm = () => {
         setEditingId(null);
-        setSelectedService('');
-        setSelectedCategory('');
-        setSubcategoryName('');
+        setSelectedCategoryId('');
+        setSelectedSubcategoryId('');
+        setServiceName('');
         setDescription('');
         setPrice('');
         setDuration('');
         setImageUrl('');
         setImageFile(null);
-        setShowForm(true);
     };
 
-    const handleOpenEdit = (subcategory) => {
-        setEditingId(subcategory.id);
-        setSelectedService(subcategory.serviceName);
-        setSelectedCategory(subcategory.category);
-        setSubcategoryName(subcategory.subcategory);
-        setDescription(subcategory.description || '');
-        setPrice(subcategory.price || '');
-        setDuration(subcategory.duration || '');
-        setImageUrl(subcategory.imageUrl || '');
+    const handleOpenCreate = () => { resetForm(); setShowForm(true); };
+
+    const handleOpenEdit = (svc) => {
+        setEditingId(svc._id);
+        const catId = svc.category?._id || '';
+        setSelectedCategoryId(catId);
+        // Pre-filter subcategories for this category
+        setFilteredSubcategories(subcategories.filter(s => s.category?._id === catId));
+        setSelectedSubcategoryId(svc.subcategory?._id || '');
+        setServiceName(svc.name || '');
+        setDescription(svc.description || '');
+        setPrice(svc.price || '');
+        setDuration(svc.duration || '');
+        setImageUrl(svc.imageUrl || '');
         setImageFile(null);
         setShowForm(true);
     };
 
-    const handleDelete = async (subcategory) => {
-        if (!window.confirm(`Are you sure you want to delete the service "${subcategory.subcategory}"?`)) return;
+    const handleDelete = async (id) => {
+        if (!window.confirm('Delete this service?')) return;
         try {
-            const res = await adminApi.deleteService(subcategory.id);
-            if (res.success) {
-                toast.success('Service deleted successfully!');
-                fetchData();
-            }
-        } catch (err) {
-            toast.error('Deletion failed');
-        }
+            const res = await adminApi.deleteService(id);
+            if (res.success) { toast.success('Service deleted!'); fetchData(); }
+        } catch { toast.error('Deletion failed'); }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!selectedService || !selectedCategory || !subcategoryName.trim() || !price || !duration) {
+        if (!selectedCategoryId || !selectedSubcategoryId || !serviceName.trim() || !price || !duration) {
             toast.error('All fields are required!');
             return;
         }
-
         setSubmitting(true);
         try {
             const formData = new FormData();
-            formData.append('name', selectedService);
-            formData.append('category', selectedCategory);
-            formData.append('subcategory', subcategoryName);
+            formData.append('name', serviceName);
+            formData.append('category', selectedCategoryId);
+            formData.append('subcategory', selectedSubcategoryId);
             formData.append('description', description || '');
             formData.append('price', price);
             formData.append('duration', duration);
-
-            if (imageFile) {
-                formData.append('image', imageFile);
-            } else if (imageUrl) {
-                formData.append('imageUrl', imageUrl);
-            }
+            if (imageFile) formData.append('image', imageFile);
+            else if (imageUrl) formData.append('imageUrl', imageUrl);
 
             let res;
             if (editingId) {
                 res = await adminApi.updateService(editingId, formData);
-                if (res.success) toast.success('Service updated successfully!');
+                if (res.success) toast.success('Service updated!');
             } else {
-                // Check if this combination already exists
-                const checkRes = await adminApi.getServices({
-                    serviceName: selectedService,
-                    category: selectedCategory,
-                    subcategory: subcategoryName
-                });
-                if (checkRes.success && checkRes.data.services.length > 0) {
-                    toast.error('This service already exists!');
-                    setSubmitting(false);
-                    return;
-                }
                 res = await adminApi.createService(formData);
-                if (res.success) toast.success('Service created successfully!');
+                if (res.success) toast.success('Service created!');
             }
             setShowForm(false);
             fetchData();
@@ -187,10 +127,6 @@ const SubcategoryManagement = () => {
         } finally {
             setSubmitting(false);
         }
-    };
-
-    const getCategoriesForService = () => {
-        return categories.filter(c => c.serviceName === selectedService);
     };
 
     return (
@@ -202,8 +138,7 @@ const SubcategoryManagement = () => {
                 </div>
                 {!showForm && (
                     <button onClick={handleOpenCreate} className="btn btn-dark fw-bold d-flex align-items-center gap-2 px-4 shadow-sm">
-                        <FaPlus />
-                        <span>Add Service</span>
+                        <FaPlus /><span>Add Service</span>
                     </button>
                 )}
             </div>
@@ -220,14 +155,12 @@ const SubcategoryManagement = () => {
                                 <select
                                     required
                                     className="form-select bg-light border-0"
-                                    value={selectedService}
-                                    onChange={(e) => setSelectedService(e.target.value)}
+                                    value={selectedCategoryId}
+                                    onChange={(e) => setSelectedCategoryId(e.target.value)}
                                 >
                                     <option value="">Choose a category...</option>
-                                    {serviceNames.map(service => (
-                                        <option key={service._id} value={service.name}>
-                                            {service.name}
-                                        </option>
+                                    {categories.map(cat => (
+                                        <option key={cat._id} value={cat._id}>{cat.name}</option>
                                     ))}
                                 </select>
                             </div>
@@ -236,15 +169,13 @@ const SubcategoryManagement = () => {
                                 <select
                                     required
                                     className="form-select bg-light border-0"
-                                    value={selectedCategory}
-                                    onChange={(e) => setSelectedCategory(e.target.value)}
-                                    disabled={!selectedService}
+                                    value={selectedSubcategoryId}
+                                    onChange={(e) => setSelectedSubcategoryId(e.target.value)}
+                                    disabled={!selectedCategoryId}
                                 >
                                     <option value="">Choose a sub-category...</option>
-                                    {getCategoriesForService().map(cat => (
-                                        <option key={cat.category} value={cat.category}>
-                                            {cat.category}
-                                        </option>
+                                    {filteredSubcategories.map(sub => (
+                                        <option key={sub._id} value={sub._id}>{sub.name}</option>
                                     ))}
                                 </select>
                             </div>
@@ -255,8 +186,8 @@ const SubcategoryManagement = () => {
                                     required
                                     className="form-control bg-light border-0"
                                     placeholder="e.g., Deep Cleaning, AC Repair"
-                                    value={subcategoryName}
-                                    onChange={(e) => setSubcategoryName(e.target.value)}
+                                    value={serviceName}
+                                    onChange={(e) => setServiceName(e.target.value)}
                                 />
                             </div>
                             <div className="col-md-12">
@@ -274,13 +205,9 @@ const SubcategoryManagement = () => {
                                 <div className="input-group">
                                     <span className="input-group-text bg-light border-0"><FaRupeeSign /></span>
                                     <input
-                                        type="number"
-                                        required
-                                        min="0"
-                                        step="1"
+                                        type="number" required min="0" step="1"
                                         className="form-control bg-light border-0"
-                                        placeholder="799"
-                                        value={price}
+                                        placeholder="799" value={price}
                                         onChange={(e) => setPrice(e.target.value)}
                                     />
                                 </div>
@@ -290,13 +217,9 @@ const SubcategoryManagement = () => {
                                 <div className="input-group">
                                     <span className="input-group-text bg-light border-0"><FaClock /></span>
                                     <input
-                                        type="number"
-                                        required
-                                        min="5"
-                                        step="5"
+                                        type="number" required min="5" step="5"
                                         className="form-control bg-light border-0"
-                                        placeholder="60"
-                                        value={duration}
+                                        placeholder="60" value={duration}
                                         onChange={(e) => setDuration(e.target.value)}
                                     />
                                 </div>
@@ -315,8 +238,7 @@ const SubcategoryManagement = () => {
                             <div className="col-md-12">
                                 <label className="form-label text-muted small fw-bold">Or Upload Image</label>
                                 <input
-                                    type="file"
-                                    accept="image/*"
+                                    type="file" accept="image/*"
                                     className="form-control bg-light border-0"
                                     onChange={(e) => setImageFile(e.target.files[0])}
                                     disabled={!!imageUrl}
@@ -324,9 +246,7 @@ const SubcategoryManagement = () => {
                             </div>
                         </div>
                         <div className="d-flex gap-2 justify-content-end">
-                            <button type="button" onClick={() => setShowForm(false)} className="btn btn-outline-secondary px-4 py-2">
-                                Cancel
-                            </button>
+                            <button type="button" onClick={() => setShowForm(false)} className="btn btn-outline-secondary px-4 py-2">Cancel</button>
                             <button type="submit" disabled={submitting} className="btn btn-dark fw-bold px-4 py-2 shadow-sm">
                                 {submitting ? 'Saving...' : 'Save Service'}
                             </button>
@@ -336,17 +256,14 @@ const SubcategoryManagement = () => {
             )}
 
             <div className="card border-0 shadow-sm rounded-3 bg-white p-4">
-                {loading ? (
-                    <LoadingSpinner message="Loading services..." />
-                ) : (
+                {loading ? <LoadingSpinner message="Loading services..." /> : (
                     <div className="table-responsive">
                         <table className="table table-hover align-middle">
                             <thead className="table-light border-0">
                                 <tr>
                                     <th>Category</th>
                                     <th>Sub-Category</th>
-                                    <th>Service</th>
-                                    <th>Description</th>
+                                    <th>Service Name</th>
                                     <th>Price</th>
                                     <th>Duration</th>
                                     <th>Status</th>
@@ -354,68 +271,36 @@ const SubcategoryManagement = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {subcategories.map((subcategory) => (
-                                    <tr key={subcategory.id}>
-                                        <td className="fw-bold text-dark">
-                                            {subcategory.serviceName}
-                                        </td>
+                                {services.map((svc) => (
+                                    <tr key={svc._id}>
+                                        <td className="fw-bold text-dark">{svc.category?.name || '—'}</td>
                                         <td>
                                             <span className="badge bg-light text-secondary border text-uppercase" style={{ fontSize: '0.7rem' }}>
-                                                {subcategory.category}
+                                                {svc.subcategory?.name || '—'}
                                             </span>
                                         </td>
                                         <td className="fw-semibold">
-                                            <FaLayerGroup className="text-primary me-2" />
-                                            {subcategory.subcategory}
+                                            <FaLayerGroup className="text-primary me-2" />{svc.name}
                                         </td>
-                                        <td className="text-muted" style={{ maxWidth: '200px' }}>
-                                            {subcategory.description || 'No description'}
-                                        </td>
-                                        <td className="fw-bold text-primary">₹{subcategory.price}</td>
+                                        <td className="fw-bold text-primary">₹{svc.price}</td>
+                                        <td><span className="badge bg-light text-dark border">{svc.duration} min</span></td>
                                         <td>
-                                            <span className="badge bg-light text-dark border">
-                                                {subcategory.duration} min
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {subcategory.isActive !== false ? (
-                                                <span className="text-success d-flex align-items-center gap-1 small fw-bold">
-                                                    <FaCheckCircle />
-                                                    <span>Active</span>
-                                                </span>
+                                            {svc.isActive ? (
+                                                <span className="text-success d-flex align-items-center gap-1 small fw-bold"><FaCheckCircle /><span>Active</span></span>
                                             ) : (
-                                                <span className="text-danger d-flex align-items-center gap-1 small fw-bold">
-                                                    <FaTimesCircle />
-                                                    <span>Inactive</span>
-                                                </span>
+                                                <span className="text-danger d-flex align-items-center gap-1 small fw-bold"><FaTimesCircle /><span>Inactive</span></span>
                                             )}
                                         </td>
                                         <td>
                                             <div className="d-flex gap-1">
-                                                <button
-                                                    onClick={() => handleOpenEdit(subcategory)}
-                                                    className="btn btn-sm btn-light border text-primary"
-                                                    title="Edit"
-                                                >
-                                                    <FaEdit />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(subcategory)}
-                                                    className="btn btn-sm btn-light border text-danger"
-                                                    title="Delete"
-                                                >
-                                                    <FaTrash />
-                                                </button>
+                                                <button onClick={() => handleOpenEdit(svc)} className="btn btn-sm btn-light border text-primary" title="Edit"><FaEdit /></button>
+                                                <button onClick={() => handleDelete(svc._id)} className="btn btn-sm btn-light border text-danger" title="Delete"><FaTrash /></button>
                                             </div>
                                         </td>
                                     </tr>
                                 ))}
-                                {subcategories.length === 0 && (
-                                    <tr>
-                                        <td colSpan="8" className="text-center py-5 text-muted">
-                                            No services found. Create your first service!
-                                        </td>
-                                    </tr>
+                                {services.length === 0 && (
+                                    <tr><td colSpan="7" className="text-center py-5 text-muted">No services found. Create your first service!</td></tr>
                                 )}
                             </tbody>
                         </table>

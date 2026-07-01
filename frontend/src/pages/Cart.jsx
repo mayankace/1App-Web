@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { FaTrash, FaCalendarAlt, FaClock, FaArrowRight, FaShoppingBag } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import { resolveImageUrl } from '../services/api';
 
 const Cart = () => {
     const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useContext(CartContext);
@@ -59,7 +60,7 @@ const Cart = () => {
                             <div key={item.service._id} className="row g-3 align-items-center mb-4 pb-4 border-bottom last-border-none">
                                 <div className="col-md-2 col-sm-3 text-center">
                                     <img
-                                        src={item.service.imageUrl || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=150'}
+                                        src={resolveImageUrl(item.service.imageUrl) || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=150'}
                                         alt={item.service.name}
                                         className="rounded-3 img-fluid object-fit-cover"
                                         style={{ height: '70px', width: '70px' }}
@@ -68,7 +69,7 @@ const Cart = () => {
 
                                 <div className="col-md-5 col-sm-9">
                                     <h6 className="fw-bold text-dark mb-1">{item.service.name}</h6>
-                                    <span className="badge bg-light text-secondary border text-uppercase fs-9">{item.service.category}</span>
+                                    <span className="badge bg-light text-secondary border text-uppercase fs-9">{item.service.category?.name || item.service.category}</span>
                                 </div>
 
                                 <div className="col-md-3 col-6 d-flex align-items-center justify-content-md-center gap-2">
