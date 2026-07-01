@@ -11,6 +11,10 @@ const subCategorySchema = new mongoose.Schema({
         ref: 'Category',
         required: [true, 'Please provide category']
     },
+    image: {
+        type: String,
+        default: null
+    },
     isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 

@@ -117,13 +117,21 @@ const adminApi = {
         return res.data;
     },
 
-    createCategory: async (name) => {
-        const res = await API.post('/services/categories', { name });
+    createCategory: async (formData) => {
+        const res = await API.post('/services/categories', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
         return res.data;
     },
 
-    updateCategory: async (id, name) => {
-        const res = await API.put(`/services/categories/${id}`, { name });
+    updateCategory: async (id, formData) => {
+        const res = await API.put(`/services/categories/${id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
         return res.data;
     },
 
@@ -139,13 +147,21 @@ const adminApi = {
         return res.data;
     },
 
-    createSubCategory: async (name, categoryId) => {
-        const res = await API.post('/services/subcategories', { name, categoryId });
+    createSubCategory: async (formData) => {
+        const res = await API.post('/services/subcategories', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
         return res.data;
     },
 
-    updateSubCategory: async (id, data) => {
-        const res = await API.put(`/services/subcategories/${id}`, data);
+    updateSubCategory: async (id, formData) => {
+        const res = await API.put(`/services/subcategories/${id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
         return res.data;
     },
 

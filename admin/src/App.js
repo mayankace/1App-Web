@@ -9,7 +9,7 @@ import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import BookingManagement from './pages/BookingManagement';
-import ServiceManagement from './pages/ServiceManagement';
+import Categories from './pages/Categories';
 import CategoryManagement from './pages/CategoryManagement';
 import SubcategoryManagement from './pages/SubcategoryManagement';
 import UserManagement from './pages/UserManagement';
@@ -42,9 +42,9 @@ function App() {
         >
           <Route index element={<Dashboard />} />
           <Route path="bookings" element={<BookingManagement />} />
-          <Route path="services" element={<ServiceManagement />} />
-          <Route path="categories" element={<CategoryManagement />} />
-          <Route path="subcategories" element={<SubcategoryManagement />} />
+          <Route path="services" element={<SubcategoryManagement />} />
+          <Route path="categories" element={<Categories />} />
+          <Route path="subcategories" element={<CategoryManagement />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="offers" element={<OfferManagement />} />
         </Route>

@@ -8,14 +8,14 @@ const { validateService } = require('../middleware/validation');
 
 // ─── CATEGORY ROUTES ─────────────────────────────────────────────────────────
 router.get('/categories', categoryController.getAllCategories);
-router.post('/categories', protect, restrictTo('admin'), categoryController.createCategory);
-router.put('/categories/:id', protect, restrictTo('admin'), categoryController.updateCategory);
+router.post('/categories', protect, restrictTo('admin'), upload.single('image'), categoryController.createCategory);
+router.put('/categories/:id', protect, restrictTo('admin'), upload.single('image'), categoryController.updateCategory);
 router.delete('/categories/:id', protect, restrictTo('admin'), categoryController.deleteCategory);
 
 // ─── SUBCATEGORY ROUTES ───────────────────────────────────────────────────────
 router.get('/subcategories', categoryController.getAllSubCategories);
-router.post('/subcategories', protect, restrictTo('admin'), categoryController.createSubCategory);
-router.put('/subcategories/:id', protect, restrictTo('admin'), categoryController.updateSubCategory);
+router.post('/subcategories', protect, restrictTo('admin'), upload.single('image'), categoryController.createSubCategory);
+router.put('/subcategories/:id', protect, restrictTo('admin'), upload.single('image'), categoryController.updateSubCategory);
 router.delete('/subcategories/:id', protect, restrictTo('admin'), categoryController.deleteSubCategory);
 
 // ─── SERVICE ROUTES ───────────────────────────────────────────────────────────
