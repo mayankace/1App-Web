@@ -31,7 +31,7 @@ const Login = () => {
             <div className="card shadow-lg border-0 rounded-4 overflow-hidden" style={{ width: '100%', maxWidth: '400px' }}>
                 <div className="bg-dark text-light p-4 text-center border-bottom border-dark border-3">
                     <FaTools size={36} className="text-dark mb-2 animate-bounce" />
-                    <h3 className="fw-bold mb-1 font-monospace">1App ADMIN</h3>
+                    <h3 className="fw-bold mb-1 font-monospace">vmarc ADMIN</h3>
                     <p className="text-muted mb-0 small">Enter credentials to access administrative dashboard</p>
                 </div>
 
@@ -45,7 +45,7 @@ const Login = () => {
                                     type="email"
                                     required
                                     className="form-control bg-light border-0 py-2.5"
-                                    placeholder="admin@1App.com"
+                                    placeholder="admin@vmarc.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                 />

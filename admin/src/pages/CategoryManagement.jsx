@@ -109,7 +109,7 @@ const CategoryManagement = () => {
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 className="fw-extrabold text-dark mb-1">Sub-Category Management</h1>
-                    <p className="text-muted">Add sub-categories under specific categories</p>
+                    <p className="text-muted">Add subcategories of selected categories</p>
                 </div>
                 {!showForm && (
                     <button onClick={handleOpenCreate} className="btn btn-dark fw-bold d-flex align-items-center gap-2 px-4 shadow-sm">
@@ -197,7 +197,7 @@ const CategoryManagement = () => {
                                         <td>
                                             {sub.image ? (
                                                 <img 
-                                                    src={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/uploads/${sub.image}`} 
+                                                    src={`${process.env.REACT_IMAGE_URL || 'http://localhost:5000'}/uploads/${sub.image}`} 
                                                     alt={sub.name} 
                                                     className="img-thumbnail" 
                                                     style={{ maxWidth: '50px' }}

@@ -38,7 +38,7 @@ const Cart = () => {
             <div className="container py-5 text-center bg-white rounded-3 shadow-sm border my-5">
                 <FaShoppingBag size={64} className="text-muted mb-3" />
                 <h3 className="fw-bold text-dark">Your Cart is Empty</h3>
-                <p className="text-muted">Add some 1App electrical services to get started.</p>
+                <p className="text-muted">Add some vmarc electrical services to get started.</p>
                 <Link to="/services" className="btn btn-warning btn-lg fw-bold px-5 mt-3">
                     Explore Services
                 </Link>

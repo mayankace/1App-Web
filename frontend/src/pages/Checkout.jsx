@@ -118,7 +118,7 @@ const Checkout = () => {
                         <div className="card shadow-lg border-0 rounded-4 overflow-hidden bg-white">
                             <div className="bg-dark text-light p-4 text-center border-bottom border-warning border-3">
                                 <FaLock className="text-warning mb-2" size={32} />
-                                <h4 className="fw-bold mb-0">1App SECURE PAY</h4>
+                                <h4 className="fw-bold mb-0">vmarc SECURE PAY</h4>
                                 <small className="text-muted">Simulated Payment Gateway</small>
                             </div>
 

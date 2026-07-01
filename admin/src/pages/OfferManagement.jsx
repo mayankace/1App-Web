@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 
 const OfferManagement = () => {
     const [offers, setOffers] = useState([
-        { code: 'VMARC10', discount: '10% OFF', description: 'Applicable on wiring and cabling services', isActive: true },
+        { code: 'vmarc10', discount: '10% OFF', description: 'Applicable on wiring and cabling services', isActive: true },
         { code: 'ELECTRO20', discount: '20% OFF', description: 'Discount on Smart DB distributions upgrades', isActive: true },
         { code: 'SAFETYFIRST', discount: 'Flat ₹200 OFF', description: 'Applicable on home inspections', isActive: true }
     ]);
@@ -66,7 +66,7 @@ const OfferManagement = () => {
                                     type="text" 
                                     required 
                                     className="form-control bg-light border-0" 
-                                    placeholder="VMARC30"
+                                    placeholder="vmarc30"
                                     value={code}
                                     onChange={(e) => setCode(e.target.value)}
                                 />

@@ -6,19 +6,19 @@ const User = require('../models/User');
 
 const seedData = async () => {
     try {
-        const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/1App';
+        const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/vmarc';
         console.log(`Connecting to database at ${uri}...`);
         await mongoose.connect(uri);
         console.log('✅ Connected to MongoDB for seeding');
 
         // 1) Seed Admin User
-        const adminEmail = process.env.ADMIN_EMAIL || 'admin@1App.com';
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@vmarc.com';
         const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123456';
 
         const existingAdmin = await Admin.findOne({ email: adminEmail });
         if (!existingAdmin) {
             await Admin.create({
-                name: '1App Administrator',
+                name: 'vmarc Administrator',
                 email: adminEmail,
                 password: adminPassword,
                 permissions: ['all']
@@ -32,7 +32,7 @@ const seedData = async () => {
         const existingUserAdmin = await User.findOne({ email: adminEmail });
         if (!existingUserAdmin) {
             await User.create({
-                name: '1App Administrator',
+                name: 'vmarc Administrator',
                 email: adminEmail,
                 password: adminPassword,
                 phone: '+10000000000',

@@ -119,7 +119,7 @@ exports.verifyPayment = async (req, res, next) => {
                 const textInvoice = generateTextInvoice(booking);
                 await sendEmail({
                     to: booking.user.email,
-                    subject: '1App: Service Booking Confirmed!',
+                    subject: 'vmarc: Service Booking Confirmed!',
                     text: `Hello ${booking.user.name},\nYour booking is confirmed.\n\nInvoice details:\n${textInvoice}`
                 });
             } catch (emailErr) {

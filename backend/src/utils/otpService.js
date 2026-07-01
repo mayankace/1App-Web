@@ -40,7 +40,7 @@ const sendOTP = async (phone) => {
     if (client) {
         try {
             await client.messages.create({
-                body: `Your 1App verification OTP is: ${otp}. Valid for 5 minutes.`,
+                body: `Your vmarc verification OTP is: ${otp}. Valid for 5 minutes.`,
                 from: process.env.TWILIO_PHONE_NUMBER || '+1234567890',
                 to: phone
             });

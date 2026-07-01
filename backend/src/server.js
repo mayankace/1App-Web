@@ -65,13 +65,13 @@ app.use(cors({
     optionsSuccessStatus: 200
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: 'Too many requests from this IP, please try again later.'
-});
-app.use('/api', limiter);
+// // Rate limiting
+// const limiter = rateLimit({
+//     windowMs: 15 * 60 * 1000,
+//     max: 100,
+//     message: 'Too many requests from this IP, please try again later.'
+// });
+// app.use('/api', limiter);
 
 // Body parser
 app.use(express.json({ limit: '10mb' }));

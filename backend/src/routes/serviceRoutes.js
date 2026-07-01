@@ -13,6 +13,8 @@ router.put('/categories/:id', protect, restrictTo('admin'), upload.single('image
 router.delete('/categories/:id', protect, restrictTo('admin'), categoryController.deleteCategory);
 
 // ─── SUBCATEGORY ROUTES ───────────────────────────────────────────────────────
+router.get('/categories/:id/subcategories', categoryController.getSubCategoriesByCategory);
+router.get('/subcategories/:id/services', categoryController.getServicesBySubCategory);
 router.get('/subcategories', categoryController.getAllSubCategories);
 router.post('/subcategories', protect, restrictTo('admin'), upload.single('image'), categoryController.createSubCategory);
 router.put('/subcategories/:id', protect, restrictTo('admin'), upload.single('image'), categoryController.updateSubCategory);

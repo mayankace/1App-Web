@@ -22,7 +22,7 @@ const MainLayout = () => {
                 <div className="p-4 border-bottom d-flex align-items-center gap-2">
                     <FaTools className="text-dark" size={24} />
                     <div>
-                        <h5 className="fw-bold mb-0 text-white font-monospace">1App</h5>
+                        <h5 className="fw-bold mb-0 text-white font-monospace">vmarc</h5>
                         <small className="text-muted tracking-wider text-uppercase font-monospace fs-8">Admin Control</small>
                     </div>
                 </div>
@@ -49,12 +49,6 @@ const MainLayout = () => {
                             </NavLink>
                         </li>
 
-                        {/* Service Management Section */}
-                        <li className="nav-item mt-2">
-                            <div className="text-muted small text-uppercase px-3 mb-2" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>
-                                Service Management
-                            </div>
-                        </li>
                         <li className="nav-item">
                             <NavLink
                                 to="/categories"
@@ -83,11 +77,6 @@ const MainLayout = () => {
                             </NavLink>
                         </li>
 
-                        <li className="nav-item mt-2">
-                            <div className="text-muted small text-uppercase px-3 mb-2" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>
-                                Management
-                            </div>
-                        </li>
                         <li className="nav-item">
                             <NavLink
                                 to="/users"

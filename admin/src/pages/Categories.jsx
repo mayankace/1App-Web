@@ -173,7 +173,7 @@ const Categories = () => {
                                         <td>
                                             {cat.image ? (
                                                 <img 
-                                                    src={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/uploads/${cat.image}`} 
+                                                    src={`${process.env.REACT_IMAGE_URL || 'http://localhost:5000'}/uploads/${cat.image}`} 
                                                     alt={cat.name} 
                                                     className="img-thumbnail" 
                                                     style={{ maxWidth: '60px' }}

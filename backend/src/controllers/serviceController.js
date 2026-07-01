@@ -37,10 +37,12 @@ exports.getServiceById = async (req, res, next) => {
     } catch (err) { next(err); }
 };
 
+
+
 exports.createService = async (req, res, next) => {
     try {
         let imageUrl = '';
-        if (req.file) imageUrl = `/uploads/${req.file.filename}`;
+        if (req.file) imageUrl = req.file.filename;
         else if (req.body.imageUrl) imageUrl = req.body.imageUrl;
 
         const service = await Service.create({ ...req.body, imageUrl });
@@ -57,7 +59,7 @@ exports.updateService = async (req, res, next) => {
 
         if (req.file) req.body.imageUrl = `/uploads/${req.file.filename}`;
 
-        service = await Service.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }).populate(POPULATE);
+        service = await Service.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after', runValidators: true }).populate(POPULATE);
         res.status(200).json({ success: true, data: { service } });
     } catch (err) { next(err); }
 };
