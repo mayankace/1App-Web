@@ -15,6 +15,8 @@ const CategoryManagement = () => {
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortOrder, setSortOrder] = useState('asc');
 
     const fetchData = async () => {
         setLoading(true);
@@ -104,6 +106,20 @@ const CategoryManagement = () => {
         }
     };
 
+    const filteredSubcategories = [...subcategories]
+    .filter((sub) =>
+        sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sub.category?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+        const first = a.name.toLowerCase();
+        const second = b.name.toLowerCase();
+
+        return sortOrder === 'asc'
+            ? first.localeCompare(second)
+            : second.localeCompare(first);
+    });
+
     return (
         <div>
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -179,6 +195,34 @@ const CategoryManagement = () => {
             )}
 
             <div className="card border-0 shadow-sm rounded-3 bg-white p-4">
+
+    <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+
+        <input
+            type="text"
+            className="form-control"
+            placeholder="Search category or sub-category..."
+            style={{ maxWidth: "350px" }}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+        />
+
+        <select
+            className="form-select"
+            style={{ width: "180px" }}
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+        >
+            <option value="asc">
+                Ascending (A-Z)
+            </option>
+
+            <option value="desc">
+                Descending (Z-A)
+            </option>
+        </select>
+
+    </div>
                 {loading ? <LoadingSpinner message="Loading sub-categories..." /> : (
                     <div className="table-responsive">
                         <table className="table table-hover align-middle">
@@ -192,7 +236,7 @@ const CategoryManagement = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {subcategories.map((sub) => (
+                                {filteredSubcategories.map((sub) => (
                                     <tr key={sub._id}>
                                         <td>
                                             {sub.image ? (
@@ -228,7 +272,7 @@ const CategoryManagement = () => {
                                         </td>
                                     </tr>
                                 ))}
-                                {subcategories.length === 0 && (
+                                {filteredSubcategories.length === 0 && (
                                     <tr><td colSpan="5" className="text-center py-5 text-muted">No sub-categories found. Create your first sub-category!</td></tr>
                                 )}
                             </tbody>

@@ -11,6 +11,8 @@ const ServiceManagement = () => {
     const [editingId, setEditingId] = useState(null);
     const [categoryName, setCategoryName] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortOrder, setSortOrder] = useState('asc');
 
     const fetchCategories = async () => {
         setLoading(true);
@@ -68,6 +70,19 @@ const ServiceManagement = () => {
         }
     };
 
+    const filteredCategories = [...categories]
+    .filter((cat) =>
+        cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+        const first = a.name.toLowerCase();
+        const second = b.name.toLowerCase();
+
+        return sortOrder === 'asc'
+            ? first.localeCompare(second)
+            : second.localeCompare(first);
+    });
+
     return (
         <div>
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -112,6 +127,29 @@ const ServiceManagement = () => {
             )}
 
             <div className="card border-0 shadow-sm rounded-3 bg-white p-4">
+
+    <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+
+        <input
+            type="text"
+            className="form-control"
+            placeholder="Search category..."
+            style={{ maxWidth: "350px" }}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+        />
+
+        <select
+            className="form-select"
+            style={{ width: "200px" }}
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+        >
+            <option value="asc">Ascending (A-Z)</option>
+            <option value="desc">Descending (Z-A)</option>
+        </select>
+
+    </div>
                 {loading ? <LoadingSpinner message="Loading categories..." /> : (
                     <div className="table-responsive">
                         <table className="table table-hover align-middle">
@@ -124,7 +162,7 @@ const ServiceManagement = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {categories.map((cat) => (
+                                {filteredCategories.map((cat) => (
                                     <tr key={cat._id}>
                                         <td className="fw-bold text-dark">
                                             <FaFolder className="text-primary me-2" />{cat.name}
@@ -145,7 +183,7 @@ const ServiceManagement = () => {
                                         </td>
                                     </tr>
                                 ))}
-                                {categories.length === 0 && (
+                                {filteredCategories.length === 0 && (
                                     <tr><td colSpan="4" className="text-center py-5 text-muted">No categories found. Create your first category!</td></tr>
                                 )}
                             </tbody>

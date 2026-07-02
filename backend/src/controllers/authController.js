@@ -177,6 +177,72 @@ exports.updateMe = async (req, res, next) => {
 };
 
 /**
+ * @desc    Forgot password - send OTP to phone or email
+ * @route   POST /api/auth/forgot-password
+ */
+exports.forgotPassword = async (req, res, next) => {
+    try {
+        const { identifier } = req.body; // phone or email
+        if (!identifier) {
+            return res.status(400).json({ success: false, message: 'Please provide email or phone number' });
+        }
+
+        const user = await User.findOne({
+            $or: [{ email: identifier.toLowerCase() }, { phone: identifier }]
+        });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'No account found with this email or phone' });
+        }
+
+        await otpService.sendOTP(user.phone);
+
+        res.status(200).json({
+            success: true,
+            message: `OTP sent to registered phone ${user.phone}`,
+            phone: user.phone
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * @desc    Reset password - verify OTP and set new password
+ * @route   POST /api/auth/reset-password
+ */
+exports.resetPassword = async (req, res, next) => {
+    try {
+        const { phone, otp, newPassword } = req.body;
+
+        if (!phone || !otp || !newPassword) {
+            return res.status(400).json({ success: false, message: 'Please provide phone, otp and newPassword' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+        }
+
+        const isValid = otpService.verifyOTP(phone, otp);
+        if (!isValid) {
+            return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+        }
+
+        const user = await User.findOne({ phone });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        res.status(200).json({ success: true, message: 'Password reset successfully' });
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
  * @desc    Request phone verification OTP
  * @route   POST /api/auth/send-otp
  */

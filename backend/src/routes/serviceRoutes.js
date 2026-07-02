@@ -4,29 +4,28 @@ const serviceController = require('../controllers/serviceController');
 const categoryController = require('../controllers/categoryController');
 const { protect, restrictTo } = require('../middleware/auth');
 const upload = require('../middleware/upload');
-const { validateService } = require('../middleware/validation');
+const { uploadServiceMedia } = require('../middleware/upload');
 
-// ─── CATEGORY ROUTES ─────────────────────────────────────────────────────────
+// ─── CATEGORY ─────────────────────────────────────────────────────────────────
 router.get('/categories', categoryController.getAllCategories);
 router.post('/categories', protect, restrictTo('admin'), upload.single('image'), categoryController.createCategory);
 router.put('/categories/:id', protect, restrictTo('admin'), upload.single('image'), categoryController.updateCategory);
 router.delete('/categories/:id', protect, restrictTo('admin'), categoryController.deleteCategory);
 
-// ─── SUBCATEGORY ROUTES ───────────────────────────────────────────────────────
+// ─── SUBCATEGORY ──────────────────────────────────────────────────────────────
+router.get('/subcategories', categoryController.getAllSubCategories);
 router.get('/categories/:id/subcategories', categoryController.getSubCategoriesByCategory);
 router.get('/subcategories/:id/services', categoryController.getServicesBySubCategory);
-router.get('/subcategories', categoryController.getAllSubCategories);
 router.post('/subcategories', protect, restrictTo('admin'), upload.single('image'), categoryController.createSubCategory);
 router.put('/subcategories/:id', protect, restrictTo('admin'), upload.single('image'), categoryController.updateSubCategory);
 router.delete('/subcategories/:id', protect, restrictTo('admin'), categoryController.deleteSubCategory);
 
-// ─── SERVICE ROUTES ───────────────────────────────────────────────────────────
+// ─── SERVICES ─────────────────────────────────────────────────────────────────
 router.get('/hierarchy', serviceController.getServiceHierarchy);
 router.get('/', serviceController.getAllServices);
 router.get('/:id', serviceController.getServiceById);
-
-router.post('/', protect, restrictTo('admin'), upload.single('image'), validateService, serviceController.createService);
-router.put('/:id', protect, restrictTo('admin'), upload.single('image'), serviceController.updateService);
+router.post('/', protect, restrictTo('admin'), uploadServiceMedia, serviceController.createService);
+router.put('/:id', protect, restrictTo('admin'), uploadServiceMedia, serviceController.updateService);
 router.delete('/:id', protect, restrictTo('admin'), serviceController.deleteService);
 
 module.exports = router;

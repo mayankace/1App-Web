@@ -1,100 +1,187 @@
 const Service = require('../models/Service');
 
 const POPULATE = [
-    { path: 'category', select: 'name' },
-    { path: 'subcategory', select: 'name category' }
+    { path: 'category', select: 'name image' },
+    { path: 'subcategory', select: 'name image category' }
 ];
 
+const parseJSON = (val, fallback) => {
+    if (val === undefined || val === null || val === '') return fallback;
+    if (typeof val === 'object') return val;
+    try { return JSON.parse(val); } catch { return fallback; }
+};
+
+const buildServiceData = (body, files = {}) => {
+    // Parse shortDescription - handle both array and string
+    let shortDescription = [];
+    if (body.shortDescription) {
+        if (typeof body.shortDescription === 'string') {
+            try {
+                shortDescription = JSON.parse(body.shortDescription);
+            } catch {
+                shortDescription = [body.shortDescription];
+            }
+        } else if (Array.isArray(body.shortDescription)) {
+            shortDescription = body.shortDescription;
+        }
+    }
+
+    const data = {
+        name: body.name,
+        shortDescription: shortDescription,
+        longDescription: body.longDescription || '',
+        category: body.category,
+        subcategory: body.subcategory,
+        serviceType: body.serviceType || '',
+        status: body.status || 'active',
+        isFeatured: body.isFeatured === 'true' || body.isFeatured === true,
+        serviceDuration: parseFloat(body.serviceDuration) || 0,
+        hasVariants: body.hasVariants === 'true' || body.hasVariants === true,
+        actualPrice: parseFloat(body.actualPrice) || 0,
+        discountPercentage: parseFloat(body.discountPercentage) || 0,
+        offerPrice: parseFloat(body.offerPrice) || 0,
+        variants: parseJSON(body.variants, []),
+        addons: parseJSON(body.addons, []),
+        includedItems: parseJSON(body.includedItems, []),
+        excludedItems: parseJSON(body.excludedItems, []),
+        faqs: parseJSON(body.faqs, []),
+        gallery: parseJSON(body.gallery, []),
+        requirements: parseJSON(body.requirements, []),
+        tools: parseJSON(body.tools, []),
+        isActive: true
+    };
+
+    // Featured image
+    if (files.featuredImage?.[0]) {
+        data.featuredImage = files.featuredImage[0].filename;
+    } else if (body.featuredImage !== undefined && body.featuredImage !== '') {
+        data.featuredImage = body.featuredImage;
+    }
+
+    // If clearFeaturedImage is true, remove the image
+    if (body.clearFeaturedImage === 'true' || body.clearFeaturedImage === true) {
+        data.featuredImage = '';
+    }
+
+    return data;
+};
+
+// ─── GET ALL ──────────────────────────────────────────────────────────────────
 exports.getAllServices = async (req, res, next) => {
     try {
-        const { category, subcategory, search } = req.query;
-        const query = { isActive: true };
-
+        const { category, subcategory, status, search } = req.query;
+        const query = {};
         if (category) query.category = category;
         if (subcategory) query.subcategory = subcategory;
+        if (status) query.status = status;
 
-        let services = await Service.find(query).populate(POPULATE).sort({ name: 1 });
+        let services = await Service.find(query).populate(POPULATE).sort({ createdAt: -1 });
 
         if (search) {
             const s = search.toLowerCase();
-            services = services.filter(svc =>
-                svc.name?.toLowerCase().includes(s) ||
-                svc.category?.name?.toLowerCase().includes(s) ||
-                svc.subcategory?.name?.toLowerCase().includes(s) ||
-                svc.description?.toLowerCase().includes(s)
+            services = services.filter(sv =>
+                sv.name?.toLowerCase().includes(s) ||
+                (sv.shortDescription && sv.shortDescription.some(p => p.toLowerCase().includes(s))) ||
+                sv.category?.name?.toLowerCase().includes(s)
             );
         }
 
-        res.status(200).json({ success: true, count: services.length, data: { services } });
+        res.json({ success: true, count: services.length, data: { services } });
     } catch (err) { next(err); }
 };
 
+// ─── GET ONE ──────────────────────────────────────────────────────────────────
 exports.getServiceById = async (req, res, next) => {
     try {
         const service = await Service.findById(req.params.id).populate(POPULATE);
         if (!service) return res.status(404).json({ success: false, message: 'Service not found' });
-        res.status(200).json({ success: true, data: { service } });
+        res.json({ success: true, data: { service } });
     } catch (err) { next(err); }
 };
 
-
-
+// ─── CREATE ───────────────────────────────────────────────────────────────────
 exports.createService = async (req, res, next) => {
     try {
-        let imageUrl = '';
-        if (req.file) imageUrl = req.file.filename;
-        else if (req.body.imageUrl) imageUrl = req.body.imageUrl;
-
-        const service = await Service.create({ ...req.body, imageUrl });
+        const data = buildServiceData(req.body, req.files || {});
+        const service = await Service.create(data);
         await service.populate(POPULATE);
-
         res.status(201).json({ success: true, data: { service } });
-    } catch (err) { next(err); }
+    } catch (err) { 
+        console.error('Create service error:', err);
+        next(err); 
+    }
 };
 
+// ─── UPDATE ───────────────────────────────────────────────────────────────────
 exports.updateService = async (req, res, next) => {
     try {
-        let service = await Service.findById(req.params.id);
-        if (!service) return res.status(404).json({ success: false, message: 'Service not found' });
+        const existing = await Service.findById(req.params.id);
+        if (!existing) return res.status(404).json({ success: false, message: 'Service not found' });
 
-        if (req.file) req.body.imageUrl = `/uploads/${req.file.filename}`;
+        const data = buildServiceData(req.body, req.files || {});
 
-        service = await Service.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after', runValidators: true }).populate(POPULATE);
-        res.status(200).json({ success: true, data: { service } });
-    } catch (err) { next(err); }
+        // Keep existing featured image if no new one provided and not clearing
+        if (!data.featuredImage && !req.body.clearFeaturedImage) {
+            data.featuredImage = existing.featuredImage;
+        }
+
+        const service = await Service.findByIdAndUpdate(
+            req.params.id, 
+            data, 
+            { new: true, runValidators: true }
+        ).populate(POPULATE);
+        
+        res.json({ success: true, data: { service } });
+    } catch (err) { 
+        console.error('Update service error:', err);
+        next(err); 
+    }
 };
 
+// ─── DELETE ───────────────────────────────────────────────────────────────────
 exports.deleteService = async (req, res, next) => {
     try {
         const service = await Service.findById(req.params.id);
         if (!service) return res.status(404).json({ success: false, message: 'Service not found' });
+        service.status = 'inactive';
         service.isActive = false;
         await service.save();
-        res.status(200).json({ success: true, message: 'Service deleted successfully (deactivated)' });
+        res.json({ success: true, message: 'Service deactivated' });
     } catch (err) { next(err); }
 };
 
+// ─── HIERARCHY (for frontend nav) ─────────────────────────────────────────────
+exports.getServiceHierarchy = async (req, res, next) => {
+    try {
+        const services = await Service.find({ status: 'active' }).populate(POPULATE);
+        const hierarchy = {};
+        services.forEach(sv => {
+            const cat = sv.category?.name || 'General';
+            const sub = sv.subcategory?.name || 'General';
+            if (!hierarchy[cat]) hierarchy[cat] = {};
+            if (!hierarchy[cat][sub]) hierarchy[cat][sub] = [];
+            hierarchy[cat][sub].push({ 
+                id: sv._id, 
+                name: sv.name,
+                price: sv.offerPrice || sv.actualPrice,
+                duration: sv.serviceDuration
+            });
+        });
+        res.json({ success: true, data: { hierarchy } });
+    } catch (err) { next(err); }
+};
+
+// ─── LEGACY: categories endpoint used by old frontend ─────────────────────────
 exports.getCategories = async (req, res, next) => {
     try {
         const Category = require('../models/Category');
         const SubCategory = require('../models/SubCategory');
-        const categories = await Category.find({ isActive: true }).sort({ name: 1 });
-        const subcategories = await SubCategory.find({ isActive: true }).populate('category', 'name').sort({ name: 1 });
-        res.status(200).json({ success: true, data: { categories, subcategories } });
-    } catch (err) { next(err); }
-};
-
-exports.getServiceHierarchy = async (req, res, next) => {
-    try {
-        const services = await Service.find({ isActive: true }).populate(POPULATE);
-        const hierarchy = {};
-        services.forEach(svc => {
-            const catName = svc.category?.name || 'General';
-            const subName = svc.subcategory?.name || 'General';
-            if (!hierarchy[catName]) hierarchy[catName] = {};
-            if (!hierarchy[catName][subName]) hierarchy[catName][subName] = [];
-            hierarchy[catName][subName].push({ id: svc._id, name: svc.name });
-        });
-        res.status(200).json({ success: true, data: { hierarchy } });
+        const [categories, subcategories] = await Promise.all([
+            Category.find({ isActive: true }).sort({ name: 1 }),
+            SubCategory.find({ isActive: true })
+                .populate('category', 'name')
+                .sort({ name: 1 })
+        ]);
+        res.json({ success: true, data: { categories, subcategories } });
     } catch (err) { next(err); }
 };

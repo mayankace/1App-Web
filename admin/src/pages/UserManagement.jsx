@@ -7,6 +7,8 @@ import { toast } from 'react-toastify';
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortOrder, setSortOrder] = useState('asc');
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -24,6 +26,26 @@ const UserManagement = () => {
         fetchUsers();
     }, []);
 
+    const filteredUsers = [...users]
+    .filter((user) => {
+        const keyword = searchTerm.toLowerCase();
+
+        return (
+            user.name?.toLowerCase().includes(keyword) ||
+            user.email?.toLowerCase().includes(keyword) ||
+            user.phone?.toLowerCase().includes(keyword) ||
+            user._id?.toLowerCase().includes(keyword)
+        );
+    })
+    .sort((a, b) => {
+        const first = (a.name || "").toLowerCase();
+        const second = (b.name || "").toLowerCase();
+
+        return sortOrder === "asc"
+            ? first.localeCompare(second)
+            : second.localeCompare(first);
+    });
+
     return (
         <div>
             <div className="mb-4">
@@ -32,6 +54,34 @@ const UserManagement = () => {
             </div>
 
             <div className="card border-0 shadow-sm rounded-3 bg-white p-4">
+
+    <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+
+        <input
+            type="text"
+            className="form-control"
+            placeholder="Search by name, email, phone or ID..."
+            style={{ maxWidth: "400px" }}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+        />
+
+        <select
+            className="form-select"
+            style={{ width: "220px" }}
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+        >
+            <option value="asc">
+                Ascending (A-Z)
+            </option>
+
+            <option value="desc">
+                Descending (Z-A)
+            </option>
+        </select>
+
+    </div>
                 {loading ? (
                     <LoadingSpinner message="Querying customer database..." />
                 ) : (
@@ -47,7 +97,7 @@ const UserManagement = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {users.map((user) => (
+                                {filteredUsers.map((user) => (
                                     <tr key={user._id}>
                                         <td className="font-monospace text-muted" style={{ fontSize: '0.8rem' }}>{user._id}</td>
                                         <td>
@@ -80,7 +130,7 @@ const UserManagement = () => {
                                         </td>
                                     </tr>
                                 ))}
-                                {users.length === 0 && (
+                                {filteredUsers.length === 0 && (
                                     <tr>
                                         <td colSpan="5" className="text-center py-5 text-muted">No registered customer users found.</td>
                                     </tr>
