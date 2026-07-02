@@ -33,6 +33,16 @@ const serviceService = {
         const response = await API.get('/services/hierarchy');
         return response.data;
     },
+
+    getSubcategoriesByCategoryId: async (categoryId) => {
+        const response = await API.get(`/services/categories/${categoryId}/subcategories`);
+        return response.data;
+    },
+
+    getServicesBySubcategoryId: async (subcategoryId) => {
+        const response = await API.get(`/services/subcategories/${subcategoryId}/services`);
+        return response.data;
+    },
 };
 
 export default serviceService;

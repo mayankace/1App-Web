@@ -1,165 +1,39 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    FaHome, FaBriefcase, FaLaptop, FaBullhorn, FaChartBar,
-    FaUserMd, FaHeartbeat, FaGraduationCap, FaCalendarAlt,
-    FaPalette, FaBus, FaTools, FaWrench, FaBolt, FaSnowflake,
-    FaTint, FaUser, FaCar, FaTimes, FaShieldAlt, FaCamera,
-    FaChartLine, FaCode, FaMobileAlt, FaDatabase, FaCloud,
-    FaCut, FaSpa, FaHammer, FaLeaf, FaDumbbell, FaStethoscope,
-    FaTruck, FaTaxi, FaMotorcycle, FaMusic, FaVideo,
-    FaFileAlt, FaBalanceScale, FaCalculator, FaMoneyBillWave,
-    FaPaintBrush, FaStar, FaBoxOpen, FaUtensils
-} from 'react-icons/fa';
+import { FaTimes, FaTag } from 'react-icons/fa';
+import serviceService from '../services/serviceService';
 
-// Map subcategory names to icons
-const subcategoryIconMap = {
-    // Cleaning
-    'Home Deep Cleaning': <FaHome />,
-    'Bathroom Cleaning': <FaTint />,
-    'Kitchen Cleaning': <FaUtensils />,
-    'Sofa & Carpet Cleaning': <FaHome />,
-    'Water Tank Cleaning': <FaTint />,
+const UPLOAD_IMAGE_URL = `${process.env.REACT_APP_IMAGE_URL}`;
 
-    // Plumbing
-    'Pipe Repair': <FaTools />,
-    'Tap & Faucet': <FaTools />,
-    'Drainage & Blockage': <FaTools />,
-
-    // Electrical
-    'Wiring & Fittings': <FaBolt />,
-    'Switch & Socket': <FaBolt />,
-    'Fan Installation': <FaBolt />,
-
-    // Handyman
-    'Furniture Assembly': <FaHammer />,
-    'Door & Window Repair': <FaHammer />,
-    'Painting': <FaPaintBrush />,
-    'Carpentry': <FaHammer />,
-
-    // AC & Appliance
-    'AC Service': <FaSnowflake />,
-    'Refrigerator Repair': <FaBoxOpen />,
-    'Washing Machine Repair': <FaTools />,
-    'Microwave Repair': <FaTools />,
-
-    // Grooming
-    'Haircut at Home': <FaCut />,
-    'Beard Grooming': <FaUser />,
-    'Hair Spa': <FaSpa />,
-
-    // Beauty & Personal Care
-    'Salon for Women': <FaPalette />,
-    'Spa for Women': <FaSpa />,
-    'Hair Studio for Women': <FaCut />,
-    'Makeup, Saree & Styling': <FaPalette />,
-    'Facial & Skincare': <FaPalette />,
-    'Waxing & Threading': <FaPalette />,
-
-    // IT & Technology
-    'Web Design': <FaLaptop />,
-    'Software Development': <FaCode />,
-    'Mobile App Development': <FaMobileAlt />,
-    'IT Support': <FaLaptop />,
-    'Database Management': <FaDatabase />,
-    'Cloud Services': <FaCloud />,
-    'Cybersecurity': <FaShieldAlt />,
-
-    // Marketing & Branding
-    'Social Media Marketing': <FaBullhorn />,
-    'SEO & Content': <FaChartLine />,
-    'Branding & Design': <FaPalette />,
-    'Video Marketing': <FaVideo />,
-    'Photography': <FaCamera />,
-
-    // Accounting & Finance
-    'Tax Consulting': <FaCalculator />,
-    'Bookkeeping': <FaChartBar />,
-    'Financial Planning': <FaMoneyBillWave />,
-    'Auditing': <FaFileAlt />,
-
-    // Professional Services
-    'Legal Consulting': <FaBalanceScale />,
-    'HR & Recruitment': <FaUserMd />,
-    'Business Strategy': <FaBriefcase />,
-
-    // Health & Wellness
-    'Doctor Consultation': <FaStethoscope />,
-    'Physiotherapy': <FaDumbbell />,
-    'Yoga & Meditation': <FaLeaf />,
-    'Nutrition Counseling': <FaHeartbeat />,
-
-    // Education
-    'Home Tutoring': <FaGraduationCap />,
-    'Online Courses': <FaLaptop />,
-    'Music Classes': <FaMusic />,
-    'Language Learning': <FaGraduationCap />,
-
-    // Events & Media
-    'Event Planning': <FaCalendarAlt />,
-    'Photography & Videography': <FaCamera />,
-    'DJ & Entertainment': <FaMusic />,
-    'Catering': <FaUtensils />,
-
-    // Transportation
-    'Cab Booking': <FaTaxi />,
-    'Truck & Movers': <FaTruck />,
-    'Bike Delivery': <FaMotorcycle />,
-    'Corporate Transport': <FaBus />,
+const resolveSubcategoryImage = (image) => {
+    if (!image) return null;
+    if (image.startsWith('http://') || image.startsWith('https://')) return image;
+    const filename = image.replace(/^\/uploads\//, '').replace(/^\//, '');
+    return `${UPLOAD_IMAGE_URL}${filename}`;
 };
 
-// Default icon per category
-const categoryDefaultIcon = {
-    'Home Services': <FaHome />,
-    'Business Services': <FaBriefcase />,
-    'IT & Technology': <FaLaptop />,
-    'Marketing & Branding': <FaBullhorn />,
-    'Accounting & Finance': <FaChartBar />,
-    'Professional Services': <FaUserMd />,
-    'Health & Wellness': <FaHeartbeat />,
-    'Education': <FaGraduationCap />,
-    'Events & Media': <FaCalendarAlt />,
-    'Beauty & Personal Care': <FaPalette />,
-    'Transportation Services': <FaBus />,
-    'Cleaning': <FaHome />,
-    'Plumbing': <FaTools />,
-    'Electrical': <FaBolt />,
-    'Handyman': <FaWrench />,
-    'AC & Appliance': <FaSnowflake />,
-    'Grooming': <FaUser />,
-};
-
-const getSubcategoryIcon = (subcategory, category) => {
-    if (subcategoryIconMap[subcategory]) return subcategoryIconMap[subcategory];
-    if (categoryDefaultIcon[category]) return categoryDefaultIcon[category];
-    return <FaStar />;
-};
-
-// Pastel background colors cycling for subcategory tiles
 const tileBgColors = [
     '#f5f0eb', '#f0f4ff', '#f0fff4', '#fff8f0',
     '#fdf0ff', '#f0faff', '#fffff0', '#fff0f5',
 ];
 
-const CategoryPopup = ({ category, subcategories, onClose }) => {
+const CategoryPopup = ({ category, categoryId, subcategories, onClose }) => {
     const navigate = useNavigate();
 
-    // Close on Escape key
     useEffect(() => {
         const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
         document.addEventListener('keydown', handleKey);
         return () => document.removeEventListener('keydown', handleKey);
     }, [onClose]);
 
-    // Prevent body scroll when open
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = ''; };
     }, []);
 
-    const handleSubcategoryClick = (sub) => {
+    const handleSubcategoryClick = async (sub) => {
         onClose();
-        navigate(`/services?category=${encodeURIComponent(category)}&subcategory=${encodeURIComponent(sub._id)}`);
+        navigate(`/services?category=${categoryId}&subcategory=${sub._id}`);
     };
 
     return (
@@ -189,7 +63,6 @@ const CategoryPopup = ({ category, subcategories, onClose }) => {
                     boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
                 }}
             >
-                {/* Close Button */}
                 <button
                     onClick={onClose}
                     style={{
@@ -207,12 +80,10 @@ const CategoryPopup = ({ category, subcategories, onClose }) => {
                     <FaTimes />
                 </button>
 
-                {/* Title */}
                 <h2 style={{ fontWeight: 800, fontSize: '1.75rem', marginBottom: '28px', color: '#111' }}>
                     {category}
                 </h2>
 
-                {/* Subcategory Grid */}
                 {subcategories.length === 0 ? (
                     <p style={{ color: '#888', textAlign: 'center', padding: '24px 0' }}>
                         No subcategories available yet.
@@ -250,11 +121,18 @@ const CategoryPopup = ({ category, subcategories, onClose }) => {
                                     background: '#fff',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     margin: '0 auto 10px',
-                                    fontSize: '26px',
-                                    color: '#444',
+                                    overflow: 'hidden',
                                     boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
                                 }}>
-                                    {getSubcategoryIcon(sub.name, category)}
+                                    {sub.image ? (
+                                        <img
+                                            src={resolveSubcategoryImage(sub.image)}
+                                            alt={sub.name}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    ) : (
+                                        <FaTag size={24} color="#aaa" />
+                                    )}
                                 </div>
                                 <div style={{
                                     fontSize: '12px',

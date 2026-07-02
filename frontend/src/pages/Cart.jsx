@@ -1,178 +1,241 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
-import { FaTrash, FaCalendarAlt, FaClock, FaArrowRight, FaShoppingBag } from 'react-icons/fa';
+import { AuthContext } from '../context/AuthContext';
+import { FaShoppingCart, FaTag, FaCheckCircle, FaArrowLeft, FaPercent } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { resolveImageUrl } from '../services/api';
 
+const groupByCategory = (items) =>
+    items.reduce((groups, item) => {
+        const cat = item.service.category?.name || item.service.category || 'Services';
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(item);
+        return groups;
+    }, {});
+
+const QtyControl = ({ quantity, onDec, onInc }) => (
+    <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e0e0e0', borderRadius: 8, overflow: 'hidden' }}>
+        <button onClick={onDec} style={{ border: 'none', background: 'none', width: 32, height: 32, cursor: 'pointer', fontSize: 16, color: '#555', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+        <span style={{ minWidth: 28, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>{quantity}</span>
+        <button onClick={onInc} style={{ border: 'none', background: 'none', width: 32, height: 32, cursor: 'pointer', fontSize: 16, color: '#2e7d32', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+    </div>
+);
+
 const Cart = () => {
     const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useContext(CartContext);
-    const [serviceDate, setServiceDate] = useState('');
-    const [timeSlot, setTimeSlot] = useState('');
+    const { user, isAuthenticated } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    // Get today's date formatted as YYYY-MM-DD for standard min attribute
-    const todayStr = new Date().toISOString().split('T')[0];
-
-    const timeSlots = [
-        '09:00 AM - 11:00 AM',
-        '11:00 AM - 01:00 PM',
-        '02:00 PM - 04:00 PM',
-        '04:00 PM - 06:00 PM'
-    ];
-
     const handleCheckout = () => {
-        if (!serviceDate || !timeSlot) {
-            toast.warn('Please select a service date and time slot first!');
+        if (!isAuthenticated) {
+            toast.warn('Please login to proceed to checkout.');
+            navigate('/login');
             return;
         }
-
-        // Store selected appointment details in sessionStorage to read in Checkout.jsx
-        sessionStorage.setItem('vmarc_booking_date', serviceDate);
-        sessionStorage.setItem('vmarc_booking_slot', timeSlot);
         navigate('/checkout');
     };
 
+    // ── Empty State ──
     if (cartItems.length === 0) {
         return (
-            <div className="container py-5 text-center bg-white rounded-3 shadow-sm border my-5">
-                <FaShoppingBag size={64} className="text-muted mb-3" />
-                <h3 className="fw-bold text-dark">Your Cart is Empty</h3>
-                <p className="text-muted">Add some vmarc electrical services to get started.</p>
-                <Link to="/services" className="btn btn-warning btn-lg fw-bold px-5 mt-3">
+            <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>
+                <svg width="160" height="155" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: 24 }}>
+                    {/* Cart body */}
+                    <rect x="52" y="82" width="96" height="66" rx="7" fill="#d4d4d4" />
+                    <rect x="58" y="88" width="84" height="54" rx="5" fill="#e9e9e9" />
+                    {/* Vertical stripes */}
+                    {[0,1,2,3,4,5].map(i => <rect key={i} x={66 + i * 13} y="91" width="7" height="48" rx="2.5" fill="#c8c8c8" />)}
+                    {/* Handle */}
+                    <rect x="48" y="73" width="44" height="11" rx="5.5" fill="#8B5E3C" />
+                    {/* Wheels */}
+                    {[63, 90, 117, 144].map((cx, i) => <circle key={i} cx={cx} cy="160" r="10" fill="none" stroke="#b0b0b0" strokeWidth="4" />)}
+                    {/* Bird body */}
+                    <ellipse cx="140" cy="79" rx="17" ry="14" fill="#6c47ff" />
+                    <circle cx="153" cy="68" r="11" fill="#6c47ff" />
+                    <polygon points="164,68 173,65 164,73" fill="#f5a623" />
+                    <circle cx="156" cy="66" r="2.5" fill="white" />
+                    <circle cx="157" cy="66" r="1.2" fill="#222" />
+                    <polygon points="123,84 107,76 123,92" fill="#5535cc" />
+                    <line x1="140" y1="93" x2="140" y2="103" stroke="#f5a623" strokeWidth="2.5" />
+                    <line x1="140" y1="103" x2="133" y2="109" stroke="#f5a623" strokeWidth="2.5" />
+                    <line x1="140" y1="103" x2="147" y2="109" stroke="#f5a623" strokeWidth="2.5" />
+                </svg>
+
+                <h2 style={{ fontWeight: 800, fontSize: '2rem', color: '#111', marginBottom: 8 }}>Your Cart is Empty</h2>
+                <p style={{ color: '#888', fontSize: '1.05rem', marginBottom: 28 }}>Lets add some services</p>
+                <Link
+                    to="/services"
+                    style={{
+                        background: '#a8d5a2',
+                        color: '#2d7a27',
+                        border: '2px solid #7bbf74',
+                        borderRadius: 12,
+                        padding: '10px 40px',
+                        fontWeight: 700,
+                        fontSize: '1.05rem',
+                        textDecoration: 'none',
+                        display: 'inline-block',
+                    }}
+                >
                     Explore Services
                 </Link>
             </div>
         );
     }
 
+    const grouped = groupByCategory(cartItems);
+    const total = getCartTotal();
+
     return (
-        <div className="container">
-            <h1 className="fw-extrabold text-dark mb-4">Your Shopping Cart</h1>
+        <div style={{ background: '#f5f5f5', minHeight: '100vh', padding: '28px 0' }}>
+            <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 20px' }}>
 
-            <div className="row g-4">
-                {/* 1. Left Column: List of items */}
-                <div className="col-lg-8">
-                    <div className="card border-0 shadow-sm rounded-3 bg-white p-4">
-                        <h5 className="fw-bold mb-4">Selected Services</h5>
-
-                        {cartItems.map((item) => (
-                            <div key={item.service._id} className="row g-3 align-items-center mb-4 pb-4 border-bottom last-border-none">
-                                <div className="col-md-2 col-sm-3 text-center">
-                                    <img
-                                        src={resolveImageUrl(item.service.imageUrl) || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=150'}
-                                        alt={item.service.name}
-                                        className="rounded-3 img-fluid object-fit-cover"
-                                        style={{ height: '70px', width: '70px' }}
-                                    />
-                                </div>
-
-                                <div className="col-md-5 col-sm-9">
-                                    <h6 className="fw-bold text-dark mb-1">{item.service.name}</h6>
-                                    <span className="badge bg-light text-secondary border text-uppercase fs-9">{item.service.category?.name || item.service.category}</span>
-                                </div>
-
-                                <div className="col-md-3 col-6 d-flex align-items-center justify-content-md-center gap-2">
-                                    <button
-                                        className="btn btn-sm btn-outline-secondary rounded-circle"
-                                        style={{ width: '28px', height: '28px', padding: 0 }}
-                                        onClick={() => updateQuantity(item.service._id, item.quantity - 1)}
-                                    >
-                                        -
-                                    </button>
-                                    <span className="fw-bold font-monospace px-2">{item.quantity}</span>
-                                    <button
-                                        className="btn btn-sm btn-outline-secondary rounded-circle"
-                                        style={{ width: '28px', height: '28px', padding: 0 }}
-                                        onClick={() => updateQuantity(item.service._id, item.quantity + 1)}
-                                    >
-                                        +
-                                    </button>
-                                </div>
-
-                                <div className="col-md-2 col-6 text-end d-flex flex-md-column justify-content-between align-items-end h-100">
-                                    <div className="fw-bold text-primary font-monospace fs-5">
-                                        ₹{(item.service.price * item.quantity).toFixed(2)}
-                                    </div>
-                                    <button
-                                        onClick={() => {
-                                            removeFromCart(item.service._id);
-                                            toast.info(`${item.service.name} removed from cart`);
-                                        }}
-                                        className="btn btn-link text-danger p-0 mt-md-2 text-decoration-none"
-                                        title="Remove item"
-                                    >
-                                        <FaTrash />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                {/* Back + Title */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+                    <button onClick={() => navigate(-1)} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}>
+                        <FaArrowLeft size={18} color="#111" />
+                    </button>
+                    <h2 style={{ fontWeight: 800, fontSize: '1.5rem', margin: 0, color: '#111' }}>Checkout</h2>
                 </div>
 
-                {/* 2. Right Column: Schedule & Checkout Sum */}
-                <div className="col-lg-4">
-                    <div className="card border-0 shadow-sm rounded-3 bg-white p-4 mb-4">
-                        <h5 className="fw-bold mb-4">Schedule Appointment</h5>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20, alignItems: 'start' }}>
 
-                        {/* Date selection */}
-                        <div className="mb-4">
-                            <label className="form-label d-flex align-items-center gap-2 text-muted fw-semibold small mb-2">
-                                <FaCalendarAlt className="text-primary" />
-                                <span>Select Service Date</span>
-                            </label>
-                            <input
-                                type="date"
-                                min={todayStr}
-                                className="form-control bg-light border-0 py-2.5 fw-medium text-dark"
-                                value={serviceDate}
-                                onChange={(e) => setServiceDate(e.target.value)}
-                            />
+                    {/* ── LEFT ── */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+                        {/* Saving banner */}
+                        <div style={{ background: '#fff', borderRadius: 14, padding: '12px 18px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#e8f5e9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <FaTag size={13} color="#2e7d32" />
+                            </div>
+                            <span style={{ fontSize: 14, color: '#333' }}>
+                                Saving <strong>₹0</strong> on this order
+                            </span>
                         </div>
 
-                        {/* Slot Selection */}
-                        <div className="mb-4">
-                            <label className="form-label d-flex align-items-center gap-2 text-muted fw-semibold small mb-2">
-                                <FaClock className="text-primary" />
-                                <span>Select Time Slot</span>
-                            </label>
-                            <select
-                                className="form-select bg-light border-0 py-2.5 fw-medium text-dark"
-                                value={timeSlot}
-                                onChange={(e) => setTimeSlot(e.target.value)}
-                            >
-                                <option value="">-- Choose Slot --</option>
-                                {timeSlots.map((slot, idx) => (
-                                    <option key={idx} value={slot}>{slot}</option>
-                                ))}
-                            </select>
+                        {/* Account card */}
+                        <div style={{ background: '#fff', borderRadius: 14, padding: '20px 22px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+                            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6, color: '#111' }}>Account</div>
+                            {isAuthenticated ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <FaCheckCircle color="#2e7d32" size={15} />
+                                    <span style={{ fontSize: 14, color: '#555' }}>
+                                        Logged in as <strong>{user?.name || user?.email}</strong>
+                                    </span>
+                                </div>
+                            ) : (
+                                <>
+                                    <p style={{ fontSize: 14, color: '#888', margin: '0 0 14px' }}>To book the service, please login or sign up</p>
+                                    <button
+                                        onClick={() => navigate('/login')}
+                                        style={{ width: '100%', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 10, padding: '13px 0', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}
+                                    >
+                                        Login
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
 
-                    <div className="card border-0 shadow-sm rounded-3 bg-white p-4">
-                        <h5 className="fw-bold mb-4">Summary</h5>
+                    {/* ── RIGHT ── */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-                        <div className="d-flex justify-content-between mb-3 text-muted">
-                            <span>Subtotal</span>
-                            <span className="font-monospace">₹{getCartTotal().toFixed(2)}</span>
-                        </div>
-                        <div className="d-flex justify-content-between mb-4 pb-4 border-bottom text-muted">
-                            <span>Service Taxes / Fees</span>
-                            <span className="text-success font-monospace">FREE</span>
+                        {/* Services grouped by category */}
+                        <div style={{ background: '#fff', borderRadius: 14, padding: '20px 22px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+                            {Object.entries(grouped).map(([category, items], catIdx, arr) => (
+                                <div key={category}>
+                                    <div style={{ fontWeight: 800, fontSize: 16, color: '#111', marginBottom: 14 }}>{category}</div>
+                                    {items.map((item, idx) => (
+                                        <div key={item.service._id}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                                                    {item.service.imageUrl && (
+                                                        <img
+                                                            src={resolveImageUrl(item.service.imageUrl)}
+                                                            alt={item.service.name}
+                                                            style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+                                                        />
+                                                    )}
+                                                    <span style={{ fontSize: 14, color: '#333', lineHeight: 1.4 }}>{item.service.name}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0, marginLeft: 12 }}>
+                                                    <QtyControl
+                                                        quantity={item.quantity}
+                                                        onDec={() => {
+                                                            if (item.quantity === 1) { removeFromCart(item.service._id); toast.info(`${item.service.name} removed`); }
+                                                            else updateQuantity(item.service._id, item.quantity - 1);
+                                                        }}
+                                                        onInc={() => updateQuantity(item.service._id, item.quantity + 1)}
+                                                    />
+                                                    <span style={{ fontWeight: 700, fontSize: 14, minWidth: 64, textAlign: 'right', color: '#111' }}>
+                                                        ₹{(item.service.price * item.quantity).toLocaleString('en-IN')}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {idx < items.length - 1 && <hr style={{ border: 'none', borderTop: '1px solid #f0f0f0', margin: '0 0 14px' }} />}
+                                        </div>
+                                    ))}
+                                    {catIdx < arr.length - 1 && <hr style={{ border: 'none', borderTop: '1px solid #ebebeb', margin: '6px 0 16px' }} />}
+                                </div>
+                            ))}
+
+                            {/* Avoid calling checkbox */}
+                            <hr style={{ border: 'none', borderTop: '1.5px dashed #e0e0e0', margin: '8px 0 14px' }} />
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                                <input type="checkbox" defaultChecked style={{ width: 17, height: 17, accentColor: '#2e7d32', cursor: 'pointer' }} />
+                                <span style={{ fontSize: 13, color: '#666' }}>Avoid calling before reaching the location</span>
+                            </label>
                         </div>
 
-                        <div className="d-flex justify-content-between align-items-center mb-4">
-                            <span className="fw-bold text-dark fs-5">Total</span>
-                            <span className="fw-bold text-primary font-monospace fs-4">₹{getCartTotal().toFixed(2)}</span>
+                        {/* Coupons */}
+                        <div style={{ background: '#fff', borderRadius: 14, padding: '16px 22px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: 14 }}>
+                            <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#e8f5e9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <FaPercent size={14} color="#2e7d32" />
+                            </div>
+                            <div>
+                                <div style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>Coupons and offers</div>
+                                <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>
+                                    {isAuthenticated ? 'No coupons available' : 'Login/Sign up to view offers'}
+                                </div>
+                            </div>
                         </div>
 
-                        <button
-                            onClick={handleCheckout}
-                            className="btn btn-warning btn-lg w-100 fw-bold py-3 d-flex align-items-center justify-content-center gap-2 shadow"
-                        >
-                            <span>Proceed to Pay</span>
-                            <FaArrowRight />
-                        </button>
+                        {/* Payment Summary */}
+                        <div style={{ background: '#fff', borderRadius: 14, padding: '20px 22px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+                            <div style={{ fontWeight: 800, fontSize: 16, color: '#111', marginBottom: 18 }}>Payment summary</div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, fontSize: 14, color: '#555' }}>
+                                <span>Item total</span>
+                                <span>₹{total.toLocaleString('en-IN')}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, fontSize: 14 }}>
+                                <span style={{ color: '#2e7d32', fontWeight: 600 }}>Free service offer</span>
+                                <span style={{ color: '#2e7d32', fontWeight: 600 }}>-₹0</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, fontSize: 14, color: '#555' }}>
+                                <span>Total amount</span>
+                                <span>₹{total.toLocaleString('en-IN')}</span>
+                            </div>
+
+                            <hr style={{ border: 'none', borderTop: '1px solid #f0f0f0', margin: '0 0 14px' }} />
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                <span style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Amount to pay</span>
+                                <span style={{ fontWeight: 800, fontSize: '1.3rem', color: '#111' }}>₹{total.toLocaleString('en-IN')}</span>
+                            </div>
+                            <div style={{ textAlign: 'right', marginBottom: 20 }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', color: '#333' }}>View breakup</span>
+                            </div>
+
+                            <button
+                                onClick={handleCheckout}
+                                style={{ width: '100%', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 12, padding: '15px 0', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}
+                            >
+                                Proceed to Pay
+                            </button>
+                        </div>
+
                     </div>
                 </div>
             </div>

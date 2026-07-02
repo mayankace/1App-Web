@@ -25,51 +25,18 @@ const Home = () => {
     const [mostBooked, setMostBooked] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [popupCategory, setPopupCategory] = useState(null);   // { label, subcategories }
-    const [subcategoryMap, setSubcategoryMap] = useState({});    // { categoryName: [sub1, sub2, ...] }
+    const [popupCategory, setPopupCategory] = useState(null);
 
-    // Category icons mapping
-    const categoryIcons = {
-        'Cleaning': <FaHome />,
-        'Plumbing': <FaTools />,
-        'Electrical': <FaBolt />,
-        'Handyman': <FaWrench />,
-        'AC & Appliance': <FaSnowflake />,
-        'Grooming': <FaUser />,
-        'Beauty & Personal Care': <FaPalette />,
-        'IT Support': <FaLaptop />,
-        'Web Design': <FaLaptop />,
-        'Software Development': <FaLaptop />,
-        'Consulting': <FaBriefcase />,
-        'Marketing': <FaBullhorn />,
-        'Ride Services': <FaCar />,
-        'Education': <FaGraduationCap />,
-        'Events & Media': <FaCalendarAlt />,
-        'Legal Services': <FaUserMd />,
-        'Home Services': <FaHome />,
-        'Business Services': <FaBriefcase />,
-        'IT & Technology': <FaLaptop />,
-        'Marketing & Branding': <FaBullhorn />,
-        'Accounting & Finance': <FaChartBar />,
-        'Professional Services': <FaUserMd />,
-        'Health & Wellness': <FaHeartbeat />,
-        'Transportation Services': <FaBus />,
+    const UPLOAD_IMAGE_URL = `${process.env.REACT_APP_IMAGE_URL}`;
+
+    const resolveCategoryImage = (imageUrl) => {
+        if (!imageUrl) return null;
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) return imageUrl;
+        const filename = imageUrl.replace(/^\/uploads\//, '').replace(/^\//, '');
+        console.log('Resolved category image URL:', `${UPLOAD_IMAGE_URL}${filename}`);
+        return `${UPLOAD_IMAGE_URL}${filename}`;
     };
 
-    // Hero grid categories (grouped from API or fallback labels)
-    const heroCategories = [
-        { label: 'Cleaning', icon: <FaHome size={28} /> },
-        { label: 'Consulting', icon: <FaBriefcase size={28} /> },
-        { label: 'IT\nSupport', icon: <FaLaptop size={28} /> },
-        { label: 'Marketing\n& Branding', icon: <FaBullhorn size={28} /> },
-        { label: 'Accounting\nand\nFinance', icon: <FaChartBar size={28} /> },
-        { label: 'Legal\nServices', icon: <FaUserMd size={28} /> },
-        { label: 'Health &\nWellness', icon: <FaHeartbeat size={28} /> },
-        { label: 'Education', icon: <FaGraduationCap size={28} /> },
-        { label: 'Events\n& Media', icon: <FaCalendarAlt size={28} /> },
-        { label: 'Beauty &\nPersonal Care', icon: <FaPalette size={28} /> },
-        { label: 'Ride\nServices', icon: <FaBus size={28} /> },
-    ];
 
     useEffect(() => {
         // Check authentication
@@ -96,19 +63,6 @@ const Home = () => {
                 );
                 setMostBooked(sorted.slice(0, 4));
 
-                // Build subcategory map from services (now category/subcategory are objects)
-                const subMap = {};
-                allServices.forEach(s => {
-                    const catName = s.category?.name;
-                    const subName = s.subcategory?.name;
-                    const subId = s.subcategory?._id;
-                    if (!catName || !subName || !subId) return;
-                    if (!subMap[catName]) subMap[catName] = [];
-                    if (!subMap[catName].find(x => x._id === subId)) {
-                        subMap[catName].push({ _id: subId, name: subName });
-                    }
-                });
-                setSubcategoryMap(subMap);
             }
 
             // Fetch categories
@@ -130,26 +84,21 @@ const Home = () => {
         }
     };
 
-    const handleCategoryClick = (category) => {
-        const normalizedCategory = category.replace(/\n/g, ' ');
-        let subcats = subcategoryMap[normalizedCategory] || [];
-        if (subcats.length === 0) {
-            const matchedKey = Object.keys(subcategoryMap).find(
-                k => k.toLowerCase().includes(normalizedCategory.toLowerCase()) ||
-                    normalizedCategory.toLowerCase().includes(k.toLowerCase())
-            );
-            if (matchedKey) subcats = subcategoryMap[matchedKey];
+    const handleCategoryClick = async (category) => {
+        const cat = categories.find(c => c.name === category);
+        if (!cat) {
+            navigate(`/services?search=${encodeURIComponent(category)}`);
+            return;
         }
-        if (subcats.length > 0) {
-            setPopupCategory({ label: normalizedCategory, subcategories: subcats });
-        } else {
-            // Navigate using category ID if found, otherwise use name as fallback
-            const cat = categories.find(c => c.name.toLowerCase() === normalizedCategory.toLowerCase());
-            if (cat) {
-                navigate(`/services?category=${cat._id}`);
+        try {
+            const res = await serviceService.getSubcategoriesByCategoryId(cat._id);
+            if (res.success && res.data.subcategories.length > 0) {
+                setPopupCategory({ label: category, categoryId: cat._id, subcategories: res.data.subcategories });
             } else {
-                navigate(`/services?search=${encodeURIComponent(normalizedCategory)}`);
+                navigate(`/services?category=${cat._id}`);
             }
+        } catch {
+            navigate(`/services?category=${cat._id}`);
         }
     };
 
@@ -213,6 +162,7 @@ const Home = () => {
             {popupCategory && (
                 <CategoryPopup
                     category={popupCategory.label}
+                    categoryId={popupCategory.categoryId}
                     subcategories={popupCategory.subcategories}
                     onClose={handleClosePopup}
                 />
@@ -229,21 +179,23 @@ const Home = () => {
                             </h1>
                             <div className="hero-category-box border rounded-4 p-4">
                                 <div className="row g-3">
-                                    {heroCategories.map((cat, idx) => (
+                                    {categories.map((cat, idx) => (
                                         <div key={idx} className="col-3">
                                             <div
                                                 className="hero-cat-item text-center p-2 rounded-3"
-                                                onClick={() => handleCategoryClick(cat.label.replace(/\n/g, ' '))}
+                                                onClick={() => handleCategoryClick(cat.name)}
                                                 style={{ cursor: 'pointer' }}
                                             >
                                                 <div className="hero-cat-icon mb-2 d-flex align-items-center justify-content-center mx-auto"
-                                                    style={{ width: 54, height: 54, background: '#f5f5f5', borderRadius: 12 }}>
-                                                    <span className="text-dark">{cat.icon}</span>
+                                                    style={{ width: 54, height: 54, background: '#f5f5f5', borderRadius: 12, overflow: 'hidden' }}>
+                                                    {cat.image ? (
+                                                        <img src={resolveCategoryImage(cat.image)} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    ) : (
+                                                        <FaTag size={24} className="text-muted" />
+                                                    )}
                                                 </div>
                                                 <div className="hero-cat-label" style={{ fontSize: '11px', color: '#333', lineHeight: 1.3 }}>
-                                                    {cat.label.split('\n').map((line, i) => (
-                                                        <span key={i}>{line}{i < cat.label.split('\n').length - 1 && <br />}</span>
-                                                    ))}
+                                                    {cat.name}
                                                 </div>
                                             </div>
                                         </div>
@@ -760,9 +712,6 @@ const Home = () => {
                                             onClick={() => handleServiceClick(service._id)}
                                         >
                                             <div>
-                                                <div className="mb-3 p-2 rounded-2 d-inline-block" style={{ background: '#f5f5f5' }}>
-                                                    {categoryIcons[service.category?.name] || <FaBriefcase size={18} className="text-muted" />}
-                                                </div>
                                                 <div className="fw-semibold mb-1" style={{ fontSize: '14px', lineHeight: 1.4 }}>{service.subcategory?.name || service.name}</div>
                                                 <div className="text-muted" style={{ fontSize: '12px', lineHeight: 1.5 }}>
                                                     {service.description ? service.description.slice(0, 60) + (service.description.length > 60 ? '.' : '') : 'Strategic growth solutions for your enterprise.'}
@@ -993,9 +942,6 @@ const Home = () => {
                                             onClick={() => handleServiceClick(service._id)}
                                         >
                                             <div>
-                                                <div className="mb-3 p-2 rounded-2 d-inline-block" style={{ background: '#f5f5f5' }}>
-                                                    {categoryIcons[service.category?.name] || <FaBriefcase size={18} className="text-muted" />}
-                                                </div>
                                                 <div className="fw-semibold mb-1" style={{ fontSize: '14px', lineHeight: 1.4 }}>{service.subcategory?.name || service.name}</div>
                                                 <div className="text-muted" style={{ fontSize: '12px', lineHeight: 1.5 }}>
                                                     {service.description ? service.description.slice(0, 60) + (service.description.length > 60 ? '.' : '') : 'Strategic growth solutions for your enterprise.'}

@@ -133,7 +133,7 @@ const ServiceDetail = () => {
                         <div className="alert alert-light border d-flex gap-3 p-3 rounded-3">
                             <FaShieldAlt className="text-success fs-3 mt-1" />
                             <div>
-                                <h6 className="fw-bold text-success mb-1">vmarc Quality Standards</h6>
+                                <h6 className="fw-bold text-success mb-1">1App Quality Standards</h6>
                                 <p className="text-muted small mb-0">
                                     Our technicians use professional tools and only install ISI certified cables. Pre-checks and circuit insulation testing are included free with every order.
                                 </p>

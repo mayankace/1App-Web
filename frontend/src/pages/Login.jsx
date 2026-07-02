@@ -38,7 +38,7 @@ const Login = () => {
                     return;
                 }
                 await register({ name, email, phone, password });
-                toast.success('Registered successfully! Welcome to vmarc.');
+                toast.success('Registered successfully! Welcome to 1App.');
             }
         } catch (err) {
             toast.error(err.message || 'Authentication failed');
@@ -51,7 +51,7 @@ const Login = () => {
                 <div className="col-md-6 col-lg-5">
                     <div className="card shadow-lg border-0 rounded-4 overflow-hidden bg-white">
                         <div className="bg-dark text-light p-4 text-center border-bottom border-warning border-3">
-                            <h3 className="fw-bold mb-1">vmarc PORTAL</h3>
+                            <h3 className="fw-bold mb-1">1App PORTAL</h3>
                             <p className="text-muted mb-0 small">
                                 {isLoginView ? 'Sign in to book and manage services' : 'Create an account to get started'}
                             </p>
