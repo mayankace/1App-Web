@@ -14,6 +14,7 @@ const CategoryManagement = () => {
     const [subcategoryName, setSubcategoryName] = useState('');
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [startingFromPrice, setStartingFromPrice] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortOrder, setSortOrder] = useState('asc');
@@ -42,6 +43,7 @@ const CategoryManagement = () => {
         setSubcategoryName('');
         setImageFile(null);
         setImagePreview(null);
+        setStartingFromPrice('');
         setShowForm(true);
     };
 
@@ -50,7 +52,8 @@ const CategoryManagement = () => {
         setSelectedCategoryId(sub.category?._id || '');
         setSubcategoryName(sub.name);
         setImageFile(null);
-        setImagePreview(sub.image ? `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/uploads/${sub.image}` : null);
+        setImagePreview(sub.image ? `${process.env.REACT_IMAGE_URL || 'http://localhost:5000'}/uploads/${sub.image}` : null);
+        setStartingFromPrice(sub.startingFromPrice?.toString() || '');
         setShowForm(true);
     };
 
@@ -85,6 +88,7 @@ const CategoryManagement = () => {
             const formData = new FormData();
             formData.append('name', subcategoryName);
             formData.append('categoryId', selectedCategoryId);
+            if (startingFromPrice) formData.append('startingFromPrice', startingFromPrice);
             if (imageFile) {
                 formData.append('image', imageFile);
             }
@@ -166,6 +170,17 @@ const CategoryManagement = () => {
                                     onChange={(e) => setSubcategoryName(e.target.value)}
                                 />
                             </div>
+                            <div className="col-md-6">
+                                <label className="form-label text-muted small fw-bold">Starting From Price (₹)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    className="form-control bg-light border-0"
+                                    placeholder="e.g., 299"
+                                    value={startingFromPrice}
+                                    onChange={(e) => setStartingFromPrice(e.target.value)}
+                                />
+                            </div>
                             <div className="col-md-12">
                                 <label className="form-label text-muted small fw-bold">Upload Image</label>
                                 <input
@@ -231,6 +246,7 @@ const CategoryManagement = () => {
                                     <th>Image</th>
                                     <th>Category</th>
                                     <th>Sub-Category</th>
+                                    <th>Starting Price</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -257,6 +273,9 @@ const CategoryManagement = () => {
                                             <FaFolder className="text-primary me-2" />{sub.category?.name || '—'}
                                         </td>
                                         <td className="fw-semibold">{sub.name}</td>
+                                        <td className="fw-bold text-primary">
+                                            {sub.startingFromPrice ? `₹${sub.startingFromPrice}` : '—'}
+                                        </td>
                                         <td>
                                             {sub.isActive ? (
                                                 <span className="text-success d-flex align-items-center gap-1 small fw-bold"><FaCheckCircle /><span>Active</span></span>
@@ -273,7 +292,7 @@ const CategoryManagement = () => {
                                     </tr>
                                 ))}
                                 {filteredSubcategories.length === 0 && (
-                                    <tr><td colSpan="5" className="text-center py-5 text-muted">No sub-categories found. Create your first sub-category!</td></tr>
+                                    <tr><td colSpan="6" className="text-center py-5 text-muted">No sub-categories found. Create your first sub-category!</td></tr>
                                 )}
                             </tbody>
                         </table>

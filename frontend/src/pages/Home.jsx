@@ -33,7 +33,6 @@ const Home = () => {
         if (!imageUrl) return null;
         if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) return imageUrl;
         const filename = imageUrl.replace(/^\/uploads\//, '').replace(/^\//, '');
-        console.log('Resolved category image URL:', `${UPLOAD_IMAGE_URL}${filename}`);
         return `${UPLOAD_IMAGE_URL}${filename}`;
     };
 

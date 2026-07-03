@@ -63,6 +63,49 @@ const buildServiceData = (body, files = {}) => {
         data.featuredImage = '';
     }
 
+    // Gallery: merge uploaded files into gallery array by index
+    if (files.galleryImages?.length) {
+        const uploadedMap = {};
+        files.galleryImages.forEach(f => {
+            // fieldname index encoded as galleryImages_0, galleryImages_1 etc via originalname convention
+            // We use file order to map to gallery items that have type==='image' and no url yet
+            uploadedMap[f.originalname] = f.filename;
+        });
+        // Replace gallery items whose url starts with 'blob:' or is empty with uploaded filename
+        let uploadIdx = 0;
+        data.gallery = data.gallery.map(item => {
+            if (item.type === 'image' && (!item.url || item.url.startsWith('blob:'))) {
+                const file = files.galleryImages[uploadIdx++];
+                if (file) return { ...item, url: file.filename };
+            }
+            return item;
+        });
+    }
+
+    // Tools: attach uploaded images by index
+    if (files.toolImages?.length) {
+        let uploadIdx = 0;
+        data.tools = data.tools.map(tool => {
+            if (!tool.image || tool.image.startsWith('blob:')) {
+                const file = files.toolImages[uploadIdx++];
+                if (file) return { ...tool, image: file.filename };
+            }
+            return tool;
+        });
+    }
+
+    // Requirements: attach uploaded images by index
+    if (files.requirementImages?.length) {
+        let uploadIdx = 0;
+        data.requirements = data.requirements.map(req => {
+            if (!req.image || req.image.startsWith('blob:')) {
+                const file = files.requirementImages[uploadIdx++];
+                if (file) return { ...req, image: file.filename };
+            }
+            return req;
+        });
+    }
+
     return data;
 };
 
@@ -97,6 +140,75 @@ exports.getServiceById = async (req, res, next) => {
         if (!service) return res.status(404).json({ success: false, message: 'Service not found' });
         res.json({ success: true, data: { service } });
     } catch (err) { next(err); }
+};
+
+// ─── GET FEATURED SERVICES (MAX 4) ───────────────────────────────────────────
+exports.getFeaturedServices = async (req, res, next) => {
+    try {
+        const services = await Service.find({
+            status: 'active',
+            isFeatured: true
+        })
+        .select('name offerPrice actualPrice rating featuredImage')
+        .sort({ createdAt: -1 })
+        .limit(4);
+
+        const formattedServices = services.map(service => ({
+            id: service._id,
+            name: service.name,
+            price: service.offerPrice || service.actualPrice,
+            rating: service.rating || 0,
+            featuredImage: service.featuredImage || ''
+        }));
+
+        res.json({
+            success: true,
+            count: formattedServices.length,
+            data: {
+                services: formattedServices
+            }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// ─── GET LATEST 4 SERVICES BY SUBCATEGORY NAME ───────────────────────────────
+exports.getServicesBySubcategory = async (req, res, next) => {
+    try {
+        const { subcategory } = req.params;
+
+        const services = await Service.find({ status: 'active' })
+            .populate({
+                path: 'subcategory',
+                match: { name: subcategory },
+                select: 'name'
+            })
+            .sort({ createdAt: -1 });
+
+        // Keep only services whose populated subcategory matched
+        const filteredServices = services
+            .filter(service => service.subcategory)
+            .slice(0, 4)
+            .map(service => ({
+                id: service._id,
+                name: service.name,
+                price: service.offerPrice || service.actualPrice,
+                duration: service.serviceDuration,
+                featuredImage: service.featuredImage
+            }));
+
+        res.json({
+            success: true,
+            count: filteredServices.length,
+            data: {
+                services: filteredServices
+            }
+        });
+
+    } catch (err) {
+        next(err);
+    }
 };
 
 // ─── CREATE ───────────────────────────────────────────────────────────────────
@@ -153,22 +265,38 @@ exports.deleteService = async (req, res, next) => {
 // ─── HIERARCHY (for frontend nav) ─────────────────────────────────────────────
 exports.getServiceHierarchy = async (req, res, next) => {
     try {
-        const services = await Service.find({ status: 'active' }).populate(POPULATE);
+        const services = await Service.find({ status: 'active' })
+            .sort({ createdAt: -1 }) // Latest services first
+            .populate(POPULATE);
+
         const hierarchy = {};
+
         services.forEach(sv => {
             const cat = sv.category?.name || 'General';
             const sub = sv.subcategory?.name || 'General';
+
             if (!hierarchy[cat]) hierarchy[cat] = {};
             if (!hierarchy[cat][sub]) hierarchy[cat][sub] = [];
-            hierarchy[cat][sub].push({ 
-                id: sv._id, 
-                name: sv.name,
-                price: sv.offerPrice || sv.actualPrice,
-                duration: sv.serviceDuration
-            });
+
+            // Only keep maximum 4 services per subcategory
+            if (hierarchy[cat][sub].length < 4) {
+                hierarchy[cat][sub].push({
+                    id: sv._id,
+                    name: sv.name,
+                    price: sv.offerPrice || sv.actualPrice,
+                    duration: sv.serviceDuration
+                });
+            }
         });
-        res.json({ success: true, data: { hierarchy } });
-    } catch (err) { next(err); }
+
+        res.json({
+            success: true,
+            data: { hierarchy }
+        });
+
+    } catch (err) {
+        next(err);
+    }
 };
 
 // ─── LEGACY: categories endpoint used by old frontend ─────────────────────────

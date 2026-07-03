@@ -37,11 +37,11 @@ export const AuthProvider = ({ children }) => {
         checkAuth();
     }, []);
 
-    const login = async (email, password) => {
+    const login = async (identifier, password) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await authService.login(email, password);
+            const res = await authService.login(identifier, password);
             if (res.success) {
                 setUser(res.data.user);
                 return res.data.user;

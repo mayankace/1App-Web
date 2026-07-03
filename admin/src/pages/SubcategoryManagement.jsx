@@ -79,21 +79,28 @@ const SubcategoryManagement = () => {
     const [featuredImage, setFeaturedImage] = useState('');
     const [featuredImageFile, setFeaturedImageFile] = useState(null);
     const [gallery, setGallery] = useState([]);
+    const [galleryImageFiles, setGalleryImageFiles] = useState([]); // File objects parallel to gallery array
     const [galleryForm, setGalleryForm] = useState({
         type: 'image',
         url: '',
-        order: 0
+        order: 0,
+        _file: null
     });
     const [editingGalleryIndex, setEditingGalleryIndex] = useState(null);
     
     // Requirements & Tools
     const [requirements, setRequirements] = useState([]);
+    const [requirementImageFiles, setRequirementImageFiles] = useState([]);
     const [newRequirement, setNewRequirement] = useState('');
+    const [newRequirementFile, setNewRequirementFile] = useState(null);
+    const [newRequirementPreview, setNewRequirementPreview] = useState('');
     const [tools, setTools] = useState([]);
+    const [toolImageFiles, setToolImageFiles] = useState([]); // File objects parallel to tools array
     const [toolForm, setToolForm] = useState({
         name: '',
         description: '',
-        image: ''
+        image: '',
+        _file: null
     });
     const [editingToolIndex, setEditingToolIndex] = useState(null);
     
@@ -188,8 +195,14 @@ const SubcategoryManagement = () => {
         setVariantForm({ name: '', sizeCapacity: '', unit: '', actualPrice: '', discountPercentage: '', offerPrice: '', duration: '' });
         setAddonForm({ name: '', description: '', price: '' });
         setFaqForm({ question: '', answer: '', order: 0 });
-        setGalleryForm({ type: 'image', url: '', order: 0 });
-        setToolForm({ name: '', description: '', image: '' });
+        setGalleryImageFiles([]);
+        setToolImageFiles([]);
+        setRequirementImageFiles([]);
+        setNewRequirement('');
+        setNewRequirementFile(null);
+        setNewRequirementPreview('');
+        setGalleryForm({ type: 'image', url: '', order: 0, _file: null });
+        setToolForm({ name: '', description: '', image: '', _file: null });
         setEditingVariantIndex(null);
         setEditingAddonIndex(null);
         setEditingFaqIndex(null);
@@ -228,8 +241,11 @@ const SubcategoryManagement = () => {
     setFeaturedImage(svc.featuredImage || '');
     setFeaturedImageFile(null);
     setGallery(svc.gallery || []);
+    setGalleryImageFiles((svc.gallery || []).map(() => null));
     setRequirements(svc.requirements || []);
+    setRequirementImageFiles((svc.requirements || []).map(() => null));
     setTools(svc.tools || []);
+    setToolImageFiles((svc.tools || []).map(() => null));
     setShowForm(true);
 };
 
@@ -357,31 +373,41 @@ const SubcategoryManagement = () => {
 
     // Gallery handlers
     const handleAddGalleryItem = () => {
-        if (!galleryForm.url) {
-            toast.error('Gallery item URL is required');
+        if (galleryForm.type === 'image' && !galleryForm._file && !galleryForm.url) {
+            toast.error('Please select an image file');
             return;
         }
+        if (galleryForm.type !== 'image' && !galleryForm.url) {
+            toast.error('URL is required for video/youtube/vimeo');
+            return;
+        }
+        const item = { type: galleryForm.type, url: galleryForm.url, order: Number(galleryForm.order) || 0 };
         if (editingGalleryIndex !== null) {
-            const updated = [...gallery];
-            updated[editingGalleryIndex] = { ...galleryForm, order: Number(galleryForm.order) || 0 };
-            setGallery(updated);
+            const updatedGallery = [...gallery];
+            updatedGallery[editingGalleryIndex] = item;
+            setGallery(updatedGallery);
+            const updatedFiles = [...galleryImageFiles];
+            updatedFiles[editingGalleryIndex] = galleryForm._file || galleryImageFiles[editingGalleryIndex];
+            setGalleryImageFiles(updatedFiles);
             setEditingGalleryIndex(null);
         } else {
-            setGallery([...gallery, { ...galleryForm, order: Number(galleryForm.order) || 0 }]);
+            setGallery([...gallery, item]);
+            setGalleryImageFiles([...galleryImageFiles, galleryForm._file || null]);
         }
-        setGalleryForm({ type: 'image', url: '', order: 0 });
+        setGalleryForm({ type: 'image', url: '', order: 0, _file: null });
     };
 
     const handleEditGallery = (index) => {
-        setGalleryForm(gallery[index]);
+        setGalleryForm({ ...gallery[index], _file: galleryImageFiles[index] || null });
         setEditingGalleryIndex(index);
     };
 
     const handleRemoveGallery = (index) => {
         setGallery(gallery.filter((_, i) => i !== index));
+        setGalleryImageFiles(galleryImageFiles.filter((_, i) => i !== index));
         if (editingGalleryIndex === index) {
             setEditingGalleryIndex(null);
-            setGalleryForm({ type: 'image', url: '', order: 0 });
+            setGalleryForm({ type: 'image', url: '', order: 0, _file: null });
         }
     };
 
@@ -391,27 +417,33 @@ const SubcategoryManagement = () => {
             toast.error('Tool name is required');
             return;
         }
+        const tool = { name: toolForm.name, description: toolForm.description, image: toolForm.image };
         if (editingToolIndex !== null) {
-            const updated = [...tools];
-            updated[editingToolIndex] = { ...toolForm };
-            setTools(updated);
+            const updatedTools = [...tools];
+            updatedTools[editingToolIndex] = tool;
+            setTools(updatedTools);
+            const updatedFiles = [...toolImageFiles];
+            updatedFiles[editingToolIndex] = toolForm._file || toolImageFiles[editingToolIndex];
+            setToolImageFiles(updatedFiles);
             setEditingToolIndex(null);
         } else {
-            setTools([...tools, { ...toolForm }]);
+            setTools([...tools, tool]);
+            setToolImageFiles([...toolImageFiles, toolForm._file || null]);
         }
-        setToolForm({ name: '', description: '', image: '' });
+        setToolForm({ name: '', description: '', image: '', _file: null });
     };
 
     const handleEditTool = (index) => {
-        setToolForm(tools[index]);
+        setToolForm({ ...tools[index], _file: toolImageFiles[index] || null });
         setEditingToolIndex(index);
     };
 
     const handleRemoveTool = (index) => {
         setTools(tools.filter((_, i) => i !== index));
+        setToolImageFiles(toolImageFiles.filter((_, i) => i !== index));
         if (editingToolIndex === index) {
             setEditingToolIndex(null);
-            setToolForm({ name: '', description: '', image: '' });
+            setToolForm({ name: '', description: '', image: '', _file: null });
         }
     };
 
@@ -438,12 +470,24 @@ const SubcategoryManagement = () => {
 
     const handleAddRequirement = () => {
         if (!newRequirement.trim()) return;
-        setRequirements([...requirements, newRequirement.trim()]);
+        setRequirements([...requirements, { title: newRequirement.trim(), image: newRequirementPreview }]);
+        setRequirementImageFiles([...requirementImageFiles, newRequirementFile || null]);
         setNewRequirement('');
+        setNewRequirementFile(null);
+        setNewRequirementPreview('');
     };
 
     const handleRemoveRequirement = (index) => {
         setRequirements(requirements.filter((_, i) => i !== index));
+        setRequirementImageFiles(requirementImageFiles.filter((_, i) => i !== index));
+    };
+
+    const handleRequirementImageSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setNewRequirementFile(file);
+            setNewRequirementPreview(URL.createObjectURL(file));
+        }
     };
 
     // Handle file selection for gallery
@@ -451,7 +495,16 @@ const SubcategoryManagement = () => {
         const file = e.target.files[0];
         if (file) {
             const url = URL.createObjectURL(file);
-            setGalleryForm({ ...galleryForm, url });
+            setGalleryForm({ ...galleryForm, url, _file: file });
+        }
+    };
+
+    // Handle file selection for tool image
+    const handleToolImageFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            setToolForm({ ...toolForm, image: url, _file: file });
         }
     };
 
@@ -537,12 +590,24 @@ const SubcategoryManagement = () => {
         // Append FAQs as JSON
         formData.append('faqs', JSON.stringify(faqs));
         
-        // Append gallery as JSON
+        // Append gallery as JSON (blob urls will be replaced by backend via uploaded files)
         formData.append('gallery', JSON.stringify(gallery));
+        // Append gallery image files
+        galleryImageFiles.forEach(file => {
+            if (file) formData.append('galleryImages', file);
+        });
         
         // Append requirements and tools as JSON
         formData.append('requirements', JSON.stringify(requirements));
+        // Append requirement image files
+        requirementImageFiles.forEach(file => {
+            if (file) formData.append('requirementImages', file);
+        });
         formData.append('tools', JSON.stringify(tools));
+        // Append tool image files
+        toolImageFiles.forEach(file => {
+            if (file) formData.append('toolImages', file);
+        });
         
         if (featuredImageFile) {
             formData.append('featuredImage', featuredImageFile);
@@ -701,6 +766,7 @@ const SubcategoryManagement = () => {
                                 <div className="d-flex gap-2 mb-2">
                                     <input
                                         type="text"
+                                        
                                         className="form-control bg-light border-0"
                                         placeholder="Add a point..."
                                         value={newShortDescriptionPoint}
@@ -1124,6 +1190,7 @@ const SubcategoryManagement = () => {
                                 <div className="mb-2">
                                     <input
                                         type="file"
+                                        
                                         accept="image/*"
                                         className="form-control bg-light border-0"
                                         onChange={handleFeaturedImageFileSelect}
@@ -1134,7 +1201,7 @@ const SubcategoryManagement = () => {
                                     </label>
                                     {featuredImage && (
                                         <div className="mt-2">
-                                            <img src={featuredImage} alt="Featured" style={{ maxHeight: '100px', maxWidth: '100px' }} />
+                                            <img src={`/uploads/${featuredImage}`} alt="Featured" style={{ maxHeight: '100px', maxWidth: '100px' }} />
                                             <span className="ms-2 text-success">✓ File selected</span>
                                         </div>
                                     )}
@@ -1150,56 +1217,75 @@ const SubcategoryManagement = () => {
                             </div>
                             <div className="col-md-6">
                                 <h6 className="fw-bold border-bottom pb-2">Gallery</h6>
-                                <div className="d-flex gap-2 mb-2">
-                                    <select
-                                        className="form-select bg-light border-0 w-auto"
-                                        value={galleryForm.type}
-                                        onChange={(e) => setGalleryForm({...galleryForm, type: e.target.value})}
-                                    >
-                                        <option value="image">Image</option>
-                                        <option value="video">Video</option>
-                                        <option value="youtube">YouTube</option>
-                                        <option value="vimeo">Vimeo</option>
-                                    </select>
-                                    <input
-                                        type="text"
-                                        className="form-control bg-light border-0"
-                                        placeholder="URL*"
-                                        value={galleryForm.url}
-                                        onChange={(e) => setGalleryForm({...galleryForm, url: e.target.value})}
-                                    />
-                                    <input
-                                        type="file"
-                                        accept="image/*,video/*"
-                                        className="d-none"
-                                        id="galleryFileUpload"
-                                        onChange={handleGalleryFileSelect}
-                                    />
-                                    <label htmlFor="galleryFileUpload" className="btn btn-outline-secondary btn-sm">
-                                        <FaFileImage /> File
-                                    </label>
-                                    <input
-                                        type="number"
-                                        className="form-control bg-light border-0 w-25"
-                                        placeholder="Order"
-                                        value={galleryForm.order}
-                                        onChange={(e) => setGalleryForm({...galleryForm, order: e.target.value})}
-                                    />
-                                    <button type="button" onClick={handleAddGalleryItem} className="btn btn-sm btn-dark">
-                                        {editingGalleryIndex !== null ? 'Update' : 'Add'}
-                                    </button>
-                                    {editingGalleryIndex !== null && (
-                                        <button type="button" onClick={() => {
-                                            setEditingGalleryIndex(null);
-                                            setGalleryForm({ type: 'image', url: '', order: 0 });
-                                        }} className="btn btn-sm btn-secondary">Cancel</button>
+                                <div className="row g-2 mb-2">
+                                    <div className="col-auto">
+                                        <select
+                                            className="form-select bg-light border-0"
+                                            value={galleryForm.type}
+                                            onChange={(e) => setGalleryForm({ ...galleryForm, type: e.target.value, url: '', _file: null })}
+                                        >
+                                            <option value="image">Image</option>
+                                            <option value="video">Video</option>
+                                            <option value="youtube">YouTube</option>
+                                            <option value="vimeo">Vimeo</option>
+                                        </select>
+                                    </div>
+                                    {galleryForm.type === 'image' ? (
+                                        <div className="col">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="d-none"
+                                                id="galleryFileUpload"
+                                                onChange={handleGalleryFileSelect}
+                                            />
+                                            <label htmlFor="galleryFileUpload" className="btn btn-outline-secondary btn-sm w-100">
+                                                <FaFileImage className="me-1" />
+                                                {galleryForm._file ? galleryForm._file.name : 'Choose Image'}
+                                            </label>
+                                            {galleryForm.url && (
+                                                <img src={galleryForm.url} alt="preview" style={{ maxHeight: 50, maxWidth: 80, marginTop: 4 }} />
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="col">
+                                            <input
+                                                type="text"
+                                                className="form-control bg-light border-0"
+                                                placeholder="URL*"
+                                                value={galleryForm.url}
+                                                onChange={(e) => setGalleryForm({ ...galleryForm, url: e.target.value })}
+                                            />
+                                        </div>
                                     )}
+                                    <div className="col-auto">
+                                        <input
+                                            type="number"
+                                            className="form-control bg-light border-0"
+                                            placeholder="Order"
+                                            style={{ width: 70 }}
+                                            value={galleryForm.order}
+                                            onChange={(e) => setGalleryForm({ ...galleryForm, order: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="col-auto d-flex gap-1">
+                                        <button type="button" onClick={handleAddGalleryItem} className="btn btn-sm btn-dark">
+                                            {editingGalleryIndex !== null ? 'Update' : 'Add'}
+                                        </button>
+                                        {editingGalleryIndex !== null && (
+                                            <button type="button" onClick={() => { setEditingGalleryIndex(null); setGalleryForm({ type: 'image', url: '', order: 0, _file: null }); }} className="btn btn-sm btn-secondary">Cancel</button>
+                                        )}
+                                    </div>
                                 </div>
                                 {gallery.length > 0 && (
                                     <div className="d-flex flex-wrap gap-2">
                                         {gallery.map((g, i) => (
                                             <span key={i} className="badge bg-light text-dark border p-2">
-                                                {g.type}: {g.url.substring(0, 30)}...
+                                                {g.type === 'image' ? (
+                                                    galleryImageFiles[i] ? <><FaImage className="me-1" />{galleryImageFiles[i].name.substring(0, 15)}</> : <><FaImage className="me-1" />{g.url?.substring(0, 20)}</>  
+                                                ) : (
+                                                    <><FaVideo className="me-1" />{g.url?.substring(0, 20)}</>
+                                                )}
                                                 <button type="button" onClick={() => handleEditGallery(i)} className="btn btn-sm btn-link p-0 ms-2"><FaEdit size={12} /></button>
                                                 <button type="button" onClick={() => handleRemoveGallery(i)} className="btn btn-sm btn-link p-0 ms-1"><FaTrash size={12} /></button>
                                             </span>
@@ -1213,65 +1299,99 @@ const SubcategoryManagement = () => {
                         <div className="row g-3 mb-4">
                             <div className="col-md-6">
                                 <h6 className="fw-bold border-bottom pb-2">Requirements</h6>
-                                <div className="d-flex gap-2 mb-2">
-                                    <input
-                                        type="text"
-                                        className="form-control bg-light border-0"
-                                        placeholder="Add requirement"
-                                        value={newRequirement}
-                                        onChange={(e) => setNewRequirement(e.target.value)}
-                                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddRequirement())}
-                                    />
-                                    <button type="button" onClick={handleAddRequirement} className="btn btn-sm btn-dark">Add</button>
+                                <div className="row g-2 mb-2">
+                                    <div className="col">
+                                        <input
+                                            type="text"
+                                            className="form-control bg-light border-0"
+                                            placeholder="Add requirement"
+                                            value={newRequirement}
+                                            onChange={(e) => setNewRequirement(e.target.value)}
+                                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddRequirement())}
+                                        />
+                                    </div>
+                                    <div className="col-auto">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="d-none"
+                                            id="requirementImageUpload"
+                                            onChange={handleRequirementImageSelect}
+                                        />
+                                        <label htmlFor="requirementImageUpload" className="btn btn-outline-secondary btn-sm">
+                                            <FaFileImage className="me-1" />
+                                            {newRequirementFile ? newRequirementFile.name.substring(0, 10) : 'Image'}
+                                        </label>
+                                        {newRequirementPreview && (
+                                            <img src={newRequirementPreview} alt="preview" style={{ maxHeight: 32, maxWidth: 48, marginLeft: 4 }} />
+                                        )}
+                                    </div>
+                                    <div className="col-auto">
+                                        <button type="button" onClick={handleAddRequirement} className="btn btn-sm btn-dark">Add</button>
+                                    </div>
                                 </div>
                                 {requirements.map((req, i) => (
-                                    <span key={i} className="badge bg-info text-white me-2 mb-2 p-2">
-                                        {req}
-                                        <button type="button" onClick={() => handleRemoveRequirement(i)} className="btn btn-sm btn-link text-white p-0 ms-2">×</button>
+                                    <span key={i} className="badge bg-info text-white me-2 mb-2 p-2 d-inline-flex align-items-center gap-1">
+                                        {(requirementImageFiles[i] || req.image) && <FaImage size={10} />}
+                                        {req.title}
+                                        <button type="button" onClick={() => handleRemoveRequirement(i)} className="btn btn-sm btn-link text-white p-0 ms-1">×</button>
                                     </span>
                                 ))}
                             </div>
                             <div className="col-md-6">
                                 <h6 className="fw-bold border-bottom pb-2"><FaTools className="me-2" />Tools</h6>
-                                <div className="d-flex gap-2 mb-2">
-                                    <input
-                                        type="text"
-                                        className="form-control bg-light border-0"
-                                        placeholder="Tool name*"
-                                        value={toolForm.name}
-                                        onChange={(e) => setToolForm({...toolForm, name: e.target.value})}
-                                    />
-                                    <input
-                                        type="text"
-                                        className="form-control bg-light border-0"
-                                        placeholder="Description"
-                                        value={toolForm.description}
-                                        onChange={(e) => setToolForm({...toolForm, description: e.target.value})}
-                                    />
-                                    <input
-                                        type="text"
-                                        className="form-control bg-light border-0 w-25"
-                                        placeholder="Image"
-                                        value={toolForm.image}
-                                        onChange={(e) => setToolForm({...toolForm, image: e.target.value})}
-                                    />
-                                    <button type="button" onClick={handleAddTool} className="btn btn-sm btn-dark">
-                                        {editingToolIndex !== null ? 'Update' : 'Add'}
-                                    </button>
-                                    {editingToolIndex !== null && (
-                                        <button type="button" onClick={() => {
-                                            setEditingToolIndex(null);
-                                            setToolForm({ name: '', description: '', image: '' });
-                                        }} className="btn btn-sm btn-secondary">Cancel</button>
-                                    )}
+                                <div className="row g-2 mb-2">
+                                    <div className="col">
+                                        <input
+                                            type="text"
+                                            className="form-control bg-light border-0"
+                                            placeholder="Tool name*"
+                                            value={toolForm.name}
+                                            onChange={(e) => setToolForm({ ...toolForm, name: e.target.value })}
+                                        />
+                                    </div>
+                                    {/* <div className="col-md-4">
+                                        <input
+                                            type="text"
+                                            className="form-control bg-light border-0"
+                                            placeholder="Description"
+                                            value={toolForm.description}
+                                            onChange={(e) => setToolForm({ ...toolForm, description: e.target.value })}
+                                        />
+                                    </div> */}
+                                    <div className="col-auto">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="d-none"
+                                            id="toolImageUpload"
+                                            onChange={handleToolImageFileSelect}
+                                        />
+                                        <label htmlFor="toolImageUpload" className="btn btn-outline-secondary btn-sm w-100">
+                                            <FaFileImage className="me-1" />
+                                            {toolForm._file ? toolForm._file.name.substring(0, 12) : 'Tool Image'}
+                                        </label>
+                                        {toolForm.image && (
+                                            <img src={toolForm.image} alt="preview" style={{ maxHeight: 40, maxWidth: 60, marginTop: 4 }} />
+                                        )}
+                                    </div>
+                                    <div className="col-auto">
+                                        <button type="button" onClick={handleAddTool} className="btn btn-sm btn-dark">
+                                            {editingToolIndex !== null ? 'Update' : 'Add'}
+                                        </button>
+                                        {editingToolIndex !== null && (
+                                            <button type="button" onClick={() => { setEditingToolIndex(null); setToolForm({ name: '', description: '', image: '', _file: null }); }} className="btn btn-sm btn-secondary">Cancel</button>
+                                        )}
+                                    </div>
                                 </div>
                                 {tools.length > 0 && (
                                     <div className="d-flex flex-wrap gap-2">
                                         {tools.map((t, i) => (
-                                            <span key={i} className="badge bg-light text-dark border p-2">
+                                            <span key={i} className="badge bg-light text-dark border p-2 d-flex align-items-center gap-1">
+                                                {(toolImageFiles[i] || t.image) && <FaImage size={10} />}
                                                 {t.name} {t.description && `(${t.description})`}
-                                                <button type="button" onClick={() => handleEditTool(i)} className="btn btn-sm btn-link p-0 ms-2"><FaEdit size={12} /></button>
-                                                <button type="button" onClick={() => handleRemoveTool(i)} className="btn btn-sm btn-link p-0 ms-1"><FaTrash size={12} /></button>
+                                                <button type="button" onClick={() => handleEditTool(i)} className="btn btn-sm btn-link p-0 ms-1"><FaEdit size={12} /></button>
+                                                <button type="button" onClick={() => handleRemoveTool(i)} className="btn btn-sm btn-link p-0"><FaTrash size={12} /></button>
                                             </span>
                                         ))}
                                     </div>

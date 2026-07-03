@@ -1,10 +1,42 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
 import { FaShoppingCart, FaTag, FaCheckCircle, FaArrowLeft, FaPercent } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { resolveImageUrl } from '../services/api';
+import SlotModal from '../components/SlotModal';
+
+const getStoredBookingSelection = () => {
+    if (typeof window === 'undefined') return null;
+    const bookingDate = sessionStorage.getItem('vmarc_booking_date');
+    const bookingSlot = sessionStorage.getItem('vmarc_booking_slot');
+    if (!bookingDate || !bookingSlot) return null;
+
+    if (bookingSlot.startsWith('Instant')) {
+        return { type: 'instant', etaMinutes: 50, date: bookingDate, time: bookingSlot };
+    }
+
+    return { type: 'scheduled', date: bookingDate, time: bookingSlot };
+};
+
+const persistBookingSelection = (slot) => {
+    if (typeof window === 'undefined') return;
+
+    if (!slot) {
+        sessionStorage.removeItem('vmarc_booking_date');
+        sessionStorage.removeItem('vmarc_booking_slot');
+        return;
+    }
+
+    if (slot.type === 'instant') {
+        sessionStorage.setItem('vmarc_booking_date', new Date().toISOString());
+        sessionStorage.setItem('vmarc_booking_slot', `Instant • In ${slot.etaMinutes || 50} mins`);
+    } else if (slot.type === 'scheduled') {
+        sessionStorage.setItem('vmarc_booking_date', slot.date);
+        sessionStorage.setItem('vmarc_booking_slot', slot.time);
+    }
+};
 
 const groupByCategory = (items) =>
     items.reduce((groups, item) => {
@@ -33,7 +65,27 @@ const Cart = () => {
             navigate('/login');
             return;
         }
+
+        const storedSelection = getStoredBookingSelection();
+        if (!selectedSlot && !storedSelection) {
+            toast.warn('Please select a time slot before checkout.');
+            return;
+        }
+
+        if (selectedSlot) {
+            persistBookingSelection(selectedSlot);
+        }
+
         navigate('/checkout');
+    };
+
+    const [slotModalOpen, setSlotModalOpen] = useState(false);
+    const [selectedSlot, setSelectedSlot] = useState(() => getStoredBookingSelection());
+
+    const handleSlotSelect = (slot) => {
+        setSelectedSlot(slot);
+        persistBookingSelection(slot);
+        toast.success('Slot selected');
     };
 
     // ── Empty State ──
@@ -134,6 +186,19 @@ const Cart = () => {
                                         Login
                                     </button>
                                 </>
+                            )}
+                        </div>
+
+                        {/* Slot card */}
+                        <div style={{ background: '#fff', borderRadius: 14, padding: '20px 22px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+                            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Slot</div>
+                            {selectedSlot ? (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <div style={{ color: '#333' }}>{selectedSlot.type === 'instant' ? `Instant • In ${selectedSlot.etaMinutes} mins` : `${new Date(selectedSlot.date).toLocaleDateString()} • ${selectedSlot.time}`}</div>
+                                    <button onClick={() => setSlotModalOpen(true)} style={{ border: '1px solid #e6e6e6', background: '#fff', padding: '8px 10px', borderRadius: 8, cursor: 'pointer' }}>Edit</button>
+                                </div>
+                            ) : (
+                                <button onClick={() => setSlotModalOpen(true)} style={{ width: '100%', background: '#6c47ff', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 0', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Select time & date</button>
                             )}
                         </div>
                     </div>
@@ -239,6 +304,7 @@ const Cart = () => {
                     </div>
                 </div>
             </div>
+            <SlotModal open={slotModalOpen} onClose={() => setSlotModalOpen(false)} onSelect={handleSlotSelect} initial={false} />
         </div>
     );
 };

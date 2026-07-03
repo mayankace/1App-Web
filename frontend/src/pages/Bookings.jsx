@@ -2,67 +2,102 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import bookingService from '../services/bookingService';
 import BookingCard from '../components/BookingCard';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { FaListAlt } from 'react-icons/fa';
 
 const Bookings = () => {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchBookings = async () => {
-        try {
-            const res = await bookingService.getMyBookings();
-            if (res.success) {
-                setBookings(res.data.bookings);
-            }
-        } catch (err) {
-            console.error('Failed to fetch bookings', err);
-        } finally {
-            setLoading(false);
-        }
+    const loadBookings = () => {
+        setLoading(true);
+        bookingService.getMyBookings()
+            .then(res => { if (res.success) setBookings(res.data.bookings); })
+            .catch(err => console.error('Failed to fetch bookings', err))
+            .finally(() => setLoading(false));
     };
 
     useEffect(() => {
-        fetchBookings();
+        loadBookings();
     }, []);
 
-    return (
-        <div className="container">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h1 className="fw-extrabold text-dark mb-0">My Bookings</h1>
-                <span className="badge bg-secondary px-3 py-2 fw-semibold font-monospace">
-                    {bookings.length} Bookings
-                </span>
-            </div>
+    if (loading) return null;
 
-            {loading ? (
-                <LoadingSpinner message="Fetching your service history..." />
-            ) : (
-                <div className="row justify-content-center">
-                    <div className="col-lg-9">
-                        {bookings.length > 0 ? (
-                            bookings.map((booking) => (
-                                <BookingCard 
-                                    key={booking._id} 
-                                    booking={booking} 
-                                    onCancelSuccess={fetchBookings} 
-                                />
-                            ))
-                        ) : (
-                            <div className="text-center py-5 bg-white rounded-3 shadow-sm border p-4 my-4">
-                                <FaListAlt className="text-muted mb-3" size={48} />
-                                <h4 className="fw-bold text-dark">No Bookings Found</h4>
-                                <p className="text-muted">You haven't booked any electrical services yet.</p>
-                                <Link to="/services" className="btn btn-warning fw-bold px-4 mt-2">
-                                    Book a Service Now
-                                </Link>
-                            </div>
-                        )}
+    if (bookings.length === 0) {
+        return (
+            <div style={styles.emptyContainer}>
+                <h2 style={styles.emptyTitle}>No bookings yet.</h2>
+                <p style={styles.emptySubtitle}>
+                    Looks like you haven't experienced quality services at home.
+                </p>
+                <Link to="/services" style={styles.exploreLink}>
+                    Explore our services →
+                </Link>
+            </div>
+        );
+    }
+
+    return (
+        <div style={styles.wrapper}>
+            <div style={{ ...styles.grid, ...(bookings.length === 1 ? styles.singleCardGrid : {}) }}>
+                {bookings.map(booking => (
+                    <div key={booking._id} style={styles.cardWrap}>
+                        <BookingCard booking={booking} onCancelled={loadBookings} />
                     </div>
-                </div>
-            )}
+                ))}
+            </div>
         </div>
     );
+};
+
+const styles = {
+    emptyContainer: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '60vh',
+        textAlign: 'center',
+        padding: '40px 20px',
+    },
+    emptyTitle: {
+        fontSize: 26,
+        fontWeight: 800,
+        color: '#111',
+        marginBottom: 12,
+    },
+    emptySubtitle: {
+        fontSize: 15,
+        color: '#888',
+        maxWidth: 320,
+        lineHeight: 1.6,
+        marginBottom: 20,
+    },
+    exploreLink: {
+        color: '#2e7d32',
+        fontWeight: 700,
+        fontSize: 15,
+        textDecoration: 'none',
+    },
+    wrapper: {
+        display: 'flex',
+        justifyContent: 'center',
+        padding: '24px 16px 40px',
+    },
+    grid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, minmax(300px, 360px))',
+        gap: 24,
+        width: '100%',
+        maxWidth: 780,
+        justifyContent: 'center',
+    },
+    singleCardGrid: {
+        gridTemplateColumns: 'minmax(300px, 360px)',
+        justifyContent: 'center',
+    },
+    cardWrap: {
+        display: 'flex',
+        justifyContent: 'center',
+    },
 };
 
 export default Bookings;

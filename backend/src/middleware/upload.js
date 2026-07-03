@@ -2,7 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-const uploadDir = process.env.UPLOAD_PATH || 'uploads/';
+const uploadDir = process.env.UPLOAD_PATH || path.join(__dirname, '..', '..', 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -31,8 +31,8 @@ const upload = multer({ storage, fileFilter: imageOnly, limits });
 // Service: multiple fields
 const uploadServiceMedia = multer({ storage, fileFilter: imageOrVideo, limits }).fields([
     { name: 'featuredImage', maxCount: 1 },
-    { name: 'gallery', maxCount: 20 },
-    { name: 'addonImages', maxCount: 20 },
+    { name: 'galleryImages', maxCount: 20 },
+    { name: 'requirementImages', maxCount: 20 },
     { name: 'toolImages', maxCount: 20 }
 ]);
 

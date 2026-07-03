@@ -1,8 +1,12 @@
 import API from './api';
 
 const authService = {
-    login: async (email, password) => {
-        const response = await API.post('/auth/login', { email, password });
+    login: async (identifier, password) => {
+        // identifier can be email or phone
+        const payload = identifier.includes('@')
+            ? { email: identifier, password }
+            : { phone: identifier, password };
+        const response = await API.post('/auth/login', payload);
         if (response.data.token) {
             localStorage.setItem('vmarc_token', response.data.token);
         }

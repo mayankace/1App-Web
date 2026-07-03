@@ -42,7 +42,7 @@ const Categories = () => {
         setEditingId(cat._id);
         setCategoryName(cat.name);
         setImageFile(null);
-        setImagePreview(cat.image ? `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/uploads/${cat.image}` : null);
+        setImagePreview(cat.image ? `${process.env.REACT_IMAGE_URL || 'http://localhost:5000'}/uploads/${cat.image}` : null);
         setShowForm(true);
     };
 

@@ -8,6 +8,7 @@ const { uploadServiceMedia } = require('../middleware/upload');
 
 // ─── CATEGORY ─────────────────────────────────────────────────────────────────
 router.get('/categories', categoryController.getAllCategories);
+router.get('/categories/subcategories',categoryController.getCategoriesWithRecentSubCategories);
 router.post('/categories', protect, restrictTo('admin'), upload.single('image'), categoryController.createCategory);
 router.put('/categories/:id', protect, restrictTo('admin'), upload.single('image'), categoryController.updateCategory);
 router.delete('/categories/:id', protect, restrictTo('admin'), categoryController.deleteCategory);
@@ -16,11 +17,13 @@ router.delete('/categories/:id', protect, restrictTo('admin'), categoryControlle
 router.get('/subcategories', categoryController.getAllSubCategories);
 router.get('/categories/:id/subcategories', categoryController.getSubCategoriesByCategory);
 router.get('/subcategories/:id/services', categoryController.getServicesBySubCategory);
+router.get('/subcategory/:subcategory', serviceController.getServicesBySubcategory);
 router.post('/subcategories', protect, restrictTo('admin'), upload.single('image'), categoryController.createSubCategory);
 router.put('/subcategories/:id', protect, restrictTo('admin'), upload.single('image'), categoryController.updateSubCategory);
 router.delete('/subcategories/:id', protect, restrictTo('admin'), categoryController.deleteSubCategory);
 
 // ─── SERVICES ─────────────────────────────────────────────────────────────────
+router.get('/featured', serviceController.getFeaturedServices);
 router.get('/hierarchy', serviceController.getServiceHierarchy);
 router.get('/', serviceController.getAllServices);
 router.get('/:id', serviceController.getServiceById);

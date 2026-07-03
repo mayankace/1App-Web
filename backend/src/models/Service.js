@@ -44,7 +44,7 @@ const toolSchema = new mongoose.Schema({
 
 const serviceSchema = new mongoose.Schema({
     name: { type: String, required: [true, 'Service name is required'], trim: true },
-    shortDescription: [{ type: String, trim: true }],
+    shortDescription: [{ type: String, required: [true, 'Short description is required'], trim: true }],
     longDescription: { type: String, trim: true },
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: [true, 'Category is required'] },
     subcategory: { type: mongoose.Schema.Types.ObjectId, ref: 'SubCategory', required: [true, 'Subcategory is required'] },
@@ -53,7 +53,7 @@ const serviceSchema = new mongoose.Schema({
     isFeatured: { type: Boolean, default: false },
     serviceDuration: { type: Number, default: 0, min: 0 },
     hasVariants: { type: Boolean, default: false },
-    actualPrice: { type: Number, min: 0, default: 0 },
+    actualPrice: { type: Number, required: [true, 'Actual price is required'], min: 0, default: 0 },
     discountPercentage: { type: Number, default: 0, min: 0, max: 100 },
     offerPrice: { type: Number, min: 0, default: 0 },
     variants: [variantSchema],
@@ -63,7 +63,7 @@ const serviceSchema = new mongoose.Schema({
     faqs: [faqSchema],
     featuredImage: { type: String, default: '' },
     gallery: [galleryItemSchema],
-    requirements: [{ type: String, trim: true }],
+    requirements: [{ title: { type: String, required: true, trim: true }, image: { type: String, default: '' } }],
     tools: [toolSchema],
     isActive: { type: Boolean, default: true },
     ratingsAverage: { type: Number, default: 4.5, min: 1, max: 5 },

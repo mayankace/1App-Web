@@ -79,7 +79,7 @@ const BookingManagement = () => {
 
     const getStatusBadge = (status) => {
         switch (status) {
-            case 'Pending': return 'bg-dark text-white';
+            case 'Pending': return 'bg-dark text-dark';
             case 'Confirmed': return 'bg-info text-dark';
             case 'In Progress': return 'bg-primary text-light';
             case 'Completed': return 'bg-success text-light';
