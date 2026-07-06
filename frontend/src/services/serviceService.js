@@ -23,16 +23,32 @@ const serviceService = {
         return response.data;
     },
 
+    getCategoriesWithSubcategories: async () => {
+        const [catRes, subRes] = await Promise.all([
+            API.get('/services/categories'),
+            API.get('/services/subcategories'),
+        ]);
+        const categories = catRes.data.data.categories.map(cat => ({
+            ...cat,
+            id: cat._id,
+            subcategories: subRes.data.data.subcategories.filter(
+                sub => (sub.category?._id || sub.category) === (cat._id?.toString?.() || cat._id)
+            ),
+        }));
+        return { success: true, data: { categories } };
+    },
+
+    getFeaturedServices: async () => {
+        const response = await API.get('/services/featured');
+        return response.data;
+    },
+
     getSubCategories: async (categoryId = '') => {
         const url = categoryId ? `/services/subcategories?category=${categoryId}` : '/services/subcategories';
         const response = await API.get(url);
         return response.data;
     },
 
-    getServiceHierarchy: async () => {
-        const response = await API.get('/services/hierarchy');
-        return response.data;
-    },
 
     getSubcategoriesByCategoryId: async (categoryId) => {
         const response = await API.get(`/services/categories/${categoryId}/subcategories`);

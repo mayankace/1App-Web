@@ -146,8 +146,8 @@ export default function Services() {
                                 }}
                             >
                                 <div style={{ width: 48, height: 48, borderRadius: 10, background: '#f0f0f0', margin: '0 auto 6px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {sub.image
-                                        ? <img src={resolveSubImg(sub.image)} alt={sub.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    {sub.icon
+                                        ? <img src={resolveSubImg(sub.icon)} alt={sub.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         : <FaTag size={18} color="#aaa" />}
                                 </div>
                                 <div style={{ fontSize: 11, color: '#333', fontWeight: 500, lineHeight: 1.3, wordBreak: 'break-word' }}>{sub.name}</div>
@@ -193,8 +193,8 @@ export default function Services() {
                                     <div key={svc._id} style={{ background: '#fff', borderRadius: 16, padding: 20, boxShadow: '0 2px 10px rgba(0,0,0,0.06)', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                                         {/* Image */}
                                         <div style={{ width: 110, height: 110, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#f0f0f0' }}>
-                                            {svc.imageUrl
-                                                ? <img src={resolveImageUrl(svc.imageUrl)} alt={svc.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            {svc.featuredImage
+                                                ? <img src={resolveImageUrl(svc.featuredImage)} alt={svc.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                 : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FaTag size={28} color="#ccc" /></div>}
                                         </div>
 
@@ -213,7 +213,7 @@ export default function Services() {
                                                 {svc.ratingsCount && <span style={{ color: '#888', fontSize: 12 }}>({(svc.ratingsCount / 1000000).toFixed(1)}M reviews)</span>}
                                             </div>
                                             <p style={{ fontSize: 13, color: '#555', lineHeight: 1.6, margin: '0 0 12px' }}>
-                                                {svc.description ? svc.description.slice(0, 100) + (svc.description.length > 100 ? '...' : '') : ''}
+                                                {svc.shortDescription ? svc.shortDescription.slice(0, 100) + (svc.description.length > 100 ? '...' : '') : ''}
                                             </p>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                 <span

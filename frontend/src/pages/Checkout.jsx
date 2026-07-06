@@ -26,11 +26,14 @@ const Checkout = () => {
 
     useEffect(() => {
         if (cartItems.length === 0) { navigate('/cart'); return; }
-        if (!bookingDate || !bookingSlot) {
+
+        const hasStoredSelection = Boolean(bookingDate && bookingSlot);
+        if (!hasStoredSelection) {
             toast.warn('Please schedule your service date and slot first.');
             navigate('/cart');
             return;
         }
+
         if (user) { setAddress(user.address || ''); setPhone(user.phone || ''); }
     }, [user, cartItems, bookingDate, bookingSlot, navigate]);
 

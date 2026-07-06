@@ -21,11 +21,13 @@ const Home = () => {
     const [loading, setLoading] = useState(true);
     const [services, setServices] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [categoriesWithSubs, setCategoriesWithSubs] = useState([]);
     const [featuredServices, setFeaturedServices] = useState([]);
     const [mostBooked, setMostBooked] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [popupCategory, setPopupCategory] = useState(null);
+    const [hierarchy, setHierarchy] = useState({});
 
     const UPLOAD_IMAGE_URL = `${process.env.REACT_APP_IMAGE_URL}`;
 
@@ -33,7 +35,6 @@ const Home = () => {
         if (!imageUrl) return null;
         if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) return imageUrl;
         const filename = imageUrl.replace(/^\/uploads\//, '').replace(/^\//, '');
-        console.log('Resolved category image URL:', `${UPLOAD_IMAGE_URL}${filename}`);
         return `${UPLOAD_IMAGE_URL}${filename}`;
     };
 
@@ -48,26 +49,31 @@ const Home = () => {
     const fetchHomeData = async () => {
         setLoading(true);
         try {
+            let allServices = [];
+
             // Fetch all services
             const servicesRes = await serviceService.getAllServices();
             if (servicesRes.success) {
-                const allServices = servicesRes.data.services;
+                allServices = servicesRes.data.services;
                 setServices(allServices);
-
-                // Featured services (first 5)
                 setFeaturedServices(allServices.slice(0, 5));
-
-                // Most booked (sort by ratings)
-                const sorted = [...allServices].sort((a, b) =>
-                    (b.ratingsAverage || 0) - (a.ratingsAverage || 0)
-                );
-                setMostBooked(sorted.slice(0, 4));
-
             }
 
-            // Fetch categories
-            const catRes = await serviceService.getCategories();
+            // Fetch featured services from endpoint for Most Booked Services section
+            const featuredRes = await serviceService.getFeaturedServices();
+            if (featuredRes.success) {
+                setMostBooked(featuredRes.data.services || []);
+            } else if (allServices.length > 0) {
+                const sortedFallback = [...allServices].sort((a, b) =>
+                    (b.ratingsAverage || 0) - (a.ratingsAverage || 0)
+                );
+                setMostBooked(sortedFallback.slice(0, 4));
+            }
+
+            // Fetch categories with subcategories
+            const catRes = await serviceService.getCategoriesWithSubcategories();
             if (catRes.success) {
+                setCategoriesWithSubs(catRes.data.categories);
                 setCategories(catRes.data.categories);
             }
         } catch (err) {
@@ -85,20 +91,15 @@ const Home = () => {
     };
 
     const handleCategoryClick = async (category) => {
-        const cat = categories.find(c => c.name === category);
+        const cat = categoriesWithSubs.find(c => c.name === category);
         if (!cat) {
             navigate(`/services?search=${encodeURIComponent(category)}`);
             return;
         }
-        try {
-            const res = await serviceService.getSubcategoriesByCategoryId(cat._id);
-            if (res.success && res.data.subcategories.length > 0) {
-                setPopupCategory({ label: category, categoryId: cat._id, subcategories: res.data.subcategories });
-            } else {
-                navigate(`/services?category=${cat._id}`);
-            }
-        } catch {
-            navigate(`/services?category=${cat._id}`);
+        if (cat.subcategories && cat.subcategories.length > 0) {
+            setPopupCategory({ label: category, categoryId: cat.id, subcategories: cat.subcategories });
+        } else {
+            navigate(`/services?category=${cat.id}`);
         }
     };
 
@@ -122,14 +123,22 @@ const Home = () => {
     };
 
     const handleViewAllServices = (categoryName) => {
-        const cat = categories.find(c => c.name === categoryName);
-        if (cat) navigate(`/services?category=${cat._id}`);
+        const cat = categoriesWithSubs.find(c => c.name === categoryName);
+        if (cat) navigate(`/services?category=${cat.id}`);
         else navigate(`/services`);
     };
 
     const getCategoryServices = (categoryName) => {
         return services.filter(s => s.category?.name === categoryName).slice(0, 4);
     };
+
+    const getCategoryByName = (name) => {
+        return categoriesWithSubs.find(c =>
+            c.name.toLowerCase().replace(/\s+/g, '').includes(name.toLowerCase().replace(/\s+/g, '')) ||
+            name.toLowerCase().replace(/\s+/g, '').includes(c.name.toLowerCase().replace(/\s+/g, ''))
+        );
+    };
+
 
     const renderStars = (rating) => {
         const stars = [];
@@ -329,8 +338,8 @@ const Home = () => {
                                     className="rounded-4 overflow-hidden mb-3"
                                     style={{ height: '200px', background: '#f0f0f0' }}
                                 >
-                                    {service.imageUrl ? (
-                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory || service.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                    {service.subcategory.image ? (
+                                        <img src={resolveImageUrl(service.subcategory.image)} alt={service.subcategory || service.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
                                     ) : (
                                         <div className="w-100 h-100 d-flex align-items-center justify-content-center">
                                             <FaTools size={40} className="text-muted" />
@@ -356,13 +365,13 @@ const Home = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
                         {mostBooked.slice(0, 4).map((service, idx) => (
                             <div
-                                key={idx}
-                                onClick={() => handleServiceClick(service._id)}
+                                key={service.id || service._id || idx}
+                                onClick={() => handleServiceClick(service.id || service._id)}
                                 style={{ cursor: 'pointer', minWidth: 0 }}
                             >
                                 <div className="rounded-4 overflow-hidden mb-3" style={{ height: '200px', background: '#f0f0f0' }}>
-                                    {service.imageUrl ? (
-                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory || service.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                    {service.featuredImage ? (
+                                        <img src={resolveImageUrl(service.featuredImage)} alt={service.subcategory || service.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
                                     ) : (
                                         <div className="w-100 h-100 d-flex align-items-center justify-content-center">
                                             <FaTools size={40} className="text-muted" />
@@ -386,6 +395,7 @@ const Home = () => {
                     </div>
                 </div>
             </section>
+
 
             {/* Wall Panels + Smart Locks Banner */}
             <section className="py-5 bg-white">
@@ -444,41 +454,72 @@ const Home = () => {
             </section>
 
             {/* Cleaning Essentials */}
-            <section className="py-5 bg-white">
-                <div className="container">
-                    <div className="d-flex justify-content-between align-items-start mb-4">
-                        <div>
-                            <h2 className="fw-bold mb-1">Cleaning Essentials</h2>
-                            <p className="text-muted small mb-0">Monthly cleaning essential services</p>
-                        </div>
-                        <button onClick={() => handleViewAllServices('Cleaning')} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">
-                            See all
-                        </button>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-                        {getCategoryServices('Cleaning').map((service, idx) => (
-                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: 0 }}>
-                                <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
-                                    {service.imageUrl ? (
-                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
-                                    ) : (
-                                        <div className="w-100 h-100 d-flex align-items-center justify-content-center">
-                                            <FaTools size={40} className="text-muted" />
-                                        </div>
-                                    )}
+            {(() => {
+                const cat = getCategoryByName('HomeServices'); if (!cat) return null; return (
+                    <section className="py-5 bg-white">
+                        <div className="container">
+                            <div className="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h2 className="fw-bold mb-1">{cat.name}</h2>
+                                    <p className="text-muted small mb-0">Monthly cleaning essential services</p>
                                 </div>
-                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory?.name}</div>
-                                <div className="d-flex align-items-center gap-2">
-                                    <span className="fw-bold">₹{service.price}</span>
-                                    {service.originalPrice && (
-                                        <span className="text-muted small text-decoration-line-through">₹{service.originalPrice}</span>
-                                    )}
-                                </div>
+                                <button onClick={() => navigate(`/services?category=${cat.id}`)} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                                {cat.subcategories.slice(0, 4).map((sub, idx) => (
+                                    <div key={idx} onClick={() => navigate(`/services?subcategory=${sub._id}`)} style={{ cursor: 'pointer', minWidth: 0 }}>
+                                        <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
+                                            {sub.image ? (
+                                                <img src={resolveCategoryImage(sub.image)} alt={sub.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                            ) : (
+                                                <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaTools size={40} className="text-muted" /></div>
+                                            )}
+                                        </div>
+                                        <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{sub.name}</div>
+                                        <div className="d-flex align-items-center gap-2">
+                                            <span className="fw-bold">₹{sub.startingFromPrice}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                );
+            })()}
+
+            {/* It Services */}
+            {(() => {
+                const cat = getCategoryByName('IT '); if (!cat) return null; return (
+                    <section className="py-5 bg-white">
+                        <div className="container">
+                            <div className="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h2 className="fw-bold mb-1">{cat.name}</h2>
+                                    <p className="text-muted small mb-0">Monthly cleaning essential services</p>
+                                </div>
+                                <button onClick={() => navigate(`/services?category=${cat.id}`)} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                                {cat.subcategories.slice(0, 4).map((sub, idx) => (
+                                    <div key={idx} onClick={() => navigate(`/services?subcategory=${sub._id}`)} style={{ cursor: 'pointer', minWidth: 0 }}>
+                                        <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
+                                            {sub.image ? (
+                                                <img src={resolveCategoryImage(sub.image)} alt={sub.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                            ) : (
+                                                <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaTools size={40} className="text-muted" /></div>
+                                            )}
+                                        </div>
+                                        <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{sub.name}</div>
+                                        <div className="d-flex align-items-center gap-2">
+                                            <span className="fw-bold">₹{sub.startingFromPrice}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                );
+            })()}
 
             {/* Home Painting Banner */}
             <section className="py-5 bg-white">
@@ -505,98 +546,107 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* Appliance Repair */}
-            <section className="py-5 bg-white">
-                <div className="container">
-                    <div className="d-flex justify-content-between align-items-start mb-4">
-                        <div>
-                            <h2 className="fw-bold mb-1">Appliance repair &amp; service</h2>
-                            <p className="text-muted small mb-0">Expert repair for all home appliances</p>
-                        </div>
-                        <button onClick={() => handleViewAllServices('AC & Appliance')} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-                        {getCategoryServices('AC & Appliance').map((service, idx) => (
-                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: 0 }}>
-                                <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
-                                    {service.imageUrl ? (
-                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
-                                    ) : (
-                                        <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaTools size={40} className="text-muted" /></div>
-                                    )}
+            {/* BusinessServices */}
+            {(() => {
+                const cat = getCategoryByName('BusinessServices'); if (!cat) return null; return (
+                    <section className="py-5 bg-white">
+                        <div className="container">
+                            <div className="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h2 className="fw-bold mb-1">{cat.name}</h2>
+                                    <p className="text-muted small mb-0">Expert repair for all home appliances</p>
                                 </div>
-                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory?.name}</div>
-                                <div className="d-flex align-items-center gap-2">
-                                    <span className="fw-bold">₹{service.price}</span>
-                                    {service.originalPrice && <span className="text-muted small text-decoration-line-through">₹{service.originalPrice}</span>}
-                                </div>
+                                <button onClick={() => navigate(`/services?category=${cat.id}`)} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                                {cat.subcategories.slice(0, 4).map((sub, idx) => (
+                                    <div key={idx} onClick={() => navigate(`/services?subcategory=${sub._id}`)} style={{ cursor: 'pointer', minWidth: 0 }}>
+                                        <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
+                                            {sub.image ? (
+                                                <img src={resolveCategoryImage(sub.image)} alt={sub.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                            ) : (
+                                                <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaTools size={40} className="text-muted" /></div>
+                                            )}
+                                        </div>
+                                        <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{sub.name}</div>
+                                        <div className="d-flex align-items-center gap-2">
+                                            <span className="fw-bold">₹{sub.startingFromPrice}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                );
+            })()}
 
             {/* Home Repair & Installation */}
-            <section className="py-5 bg-white">
-                <div className="container">
-                    <div className="d-flex justify-content-between align-items-start mb-4">
-                        <div>
-                            <h2 className="fw-bold mb-1">Home repair &amp; installation</h2>
-                            <p className="text-muted small mb-0">Trusted handyman services at your door</p>
-                        </div>
-                        <button onClick={() => handleViewAllServices('Handyman')} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-                        {getCategoryServices('Handyman').map((service, idx) => (
-                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: 0 }}>
-                                <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
-                                    {service.imageUrl ? (
-                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
-                                    ) : (
-                                        <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaWrench size={40} className="text-muted" /></div>
-                                    )}
+            {(() => {
+                const cat = getCategoryByName('Handyman'); if (!cat) return null; return (
+                    <section className="py-5 bg-white">
+                        <div className="container">
+                            <div className="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h2 className="fw-bold mb-1">{cat.name}</h2>
+                                    <p className="text-muted small mb-0">Trusted handyman services at your door</p>
                                 </div>
-                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory?.name}</div>
-                                <div className="d-flex align-items-center gap-2">
-                                    <span className="fw-bold">₹{service.price}</span>
-                                    {service.originalPrice && <span className="text-muted small text-decoration-line-through">₹{service.originalPrice}</span>}
-                                </div>
+                                <button onClick={() => navigate(`/services?category=${cat.id}`)} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                                {cat.subcategories.slice(0, 4).map((sub, idx) => (
+                                    <div key={idx} onClick={() => navigate(`/services?subcategory=${sub._id}`)} style={{ cursor: 'pointer', minWidth: 0 }}>
+                                        <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
+                                            {sub.image ? (
+                                                <img src={resolveCategoryImage(sub.image)} alt={sub.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                            ) : (
+                                                <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaWrench size={40} className="text-muted" /></div>
+                                            )}
+                                        </div>
+                                        <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{sub.name}</div>
+                                        <div className="d-flex align-items-center gap-2">
+                                            <span className="fw-bold">₹{sub.startingFromPrice}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                );
+            })()}
 
             {/* Beauty & Personal Care */}
-            <section className="py-5 bg-white">
-                <div className="container">
-                    <div className="d-flex justify-content-between align-items-start mb-4">
-                        <div>
-                            <h2 className="fw-bold mb-1">Beauty &amp; Personal Care</h2>
-                            <p className="text-muted small mb-0">Professional beauty services at home</p>
-                        </div>
-                        <button onClick={() => handleViewAllServices('Beauty & Personal Care')} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-                        {getCategoryServices('Beauty & Personal Care').map((service, idx) => (
-                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: 0 }}>
-                                <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
-                                    {service.imageUrl ? (
-                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
-                                    ) : (
-                                        <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaPalette size={40} className="text-muted" /></div>
-                                    )}
+            {(() => {
+                const cat = getCategoryByName('Beauty'); if (!cat) return null; return (
+                    <section className="py-5 bg-white">
+                        <div className="container">
+                            <div className="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h2 className="fw-bold mb-1">{cat.name}</h2>
+                                    <p className="text-muted small mb-0">Professional beauty services at home</p>
                                 </div>
-                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory?.name}</div>
-                                <div className="d-flex align-items-center gap-2">
-                                    <span className="fw-bold">₹{service.price}</span>
-                                    {service.originalPrice && <span className="text-muted small text-decoration-line-through">₹{service.originalPrice}</span>}
-                                </div>
+                                <button onClick={() => navigate(`/services?category=${cat.id}`)} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                                {cat.subcategories.slice(0, 4).map((sub, idx) => (
+                                    <div key={idx} onClick={() => navigate(`/services?subcategory=${sub._id}`)} style={{ cursor: 'pointer', minWidth: 0 }}>
+                                        <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
+                                            {sub.image ? (
+                                                <img src={resolveCategoryImage(sub.image)} alt={sub.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                            ) : (
+                                                <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaPalette size={40} className="text-muted" /></div>
+                                            )}
+                                        </div>
+                                        <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{sub.name}</div>
+                                        <div className="d-flex align-items-center gap-2">
+                                            <span className="fw-bold">₹{sub.startingFromPrice}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                );
+            })()}
 
             {/* RO Water Purifier Banner */}
             <section className="py-5 bg-white">
@@ -626,110 +676,30 @@ const Home = () => {
             </section>
 
             {/* Personal Care for Men */}
-            <section className="py-5 bg-white">
-                <div className="container">
-                    <div className="d-flex justify-content-between align-items-start mb-4">
-                        <div>
-                            <h2 className="fw-bold mb-1">Personal Care for men</h2>
-                            <p className="text-muted small mb-0">Grooming essentials delivered at home</p>
-                        </div>
-                        <button onClick={() => handleViewAllServices('Grooming')} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-                        {getCategoryServices('Grooming').map((service, idx) => (
-                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: 0 }}>
-                                <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
-                                    {service.imageUrl ? (
-                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
-                                    ) : (
-                                        <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaUser size={40} className="text-muted" /></div>
-                                    )}
-                                </div>
-                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory?.name}</div>
-                                <div className="d-flex align-items-center gap-2">
-                                    <span className="fw-bold">₹{service.price}</span>
-                                    {service.originalPrice && <span className="text-muted small text-decoration-line-through">₹{service.originalPrice}</span>}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Ride Safe */}
-            <section className="py-5 bg-white">
-                <div className="container">
-                    <div className="d-flex justify-content-between align-items-start mb-4">
-                        <div>
-                            <h2 className="fw-bold mb-1">Ride Safe With 1-App</h2>
-                            <p className="text-muted small mb-0">Safe and reliable ride services</p>
-                        </div>
-                        <button onClick={() => handleViewAllServices('Ride Services')} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-                        {getCategoryServices('Ride Services').map((service, idx) => (
-                            <div key={idx} onClick={() => handleServiceClick(service._id)} style={{ cursor: 'pointer', minWidth: 0 }}>
-                                <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
-                                    {service.imageUrl ? (
-                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
-                                    ) : (
-                                        <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaCar size={40} className="text-muted" /></div>
-                                    )}
-                                </div>
-                                <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{service.subcategory?.name}</div>
-                                <div className="d-flex align-items-center gap-2">
-                                    <span className="fw-bold">₹{service.price}</span>
-                                    {service.originalPrice && <span className="text-muted small text-decoration-line-through">₹{service.originalPrice}</span>}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Marketing & Business Services */}
-            {[
-                { category: 'Marketing & Branding', title: 'Marketing Services' },
-                { category: 'Business Services', title: 'Business and Consulting Services' },
-                { category: 'Professional Services', title: 'Professional Services' },
-                { category: 'Accounting & Finance', title: 'Accounting & Finance Services' },
-            ].map(({ category, title }) => {
-                const catServices = getCategoryServices(category);
-                if (!catServices.length) return null;
-                return (
-                    <section key={category} className="py-5 bg-white">
+            {(() => {
+                const cat = getCategoryByName('Grooming'); if (!cat) return null; return (
+                    <section className="py-5 bg-white">
                         <div className="container">
-                            <div className="d-flex justify-content-between align-items-center mb-4">
-                                <h2 className="fw-bold mb-0">{title}</h2>
-                                <button onClick={() => handleViewAllServices(category)} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See All</button>
+                            <div className="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h2 className="fw-bold mb-1">{cat.name}</h2>
+                                    <p className="text-muted small mb-0">Grooming essentials delivered at home</p>
+                                </div>
+                                <button onClick={() => navigate(`/services?category=${cat.id}`)} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
                             </div>
-                            <div className="row g-3">
-                                {catServices.map((service, idx) => (
-                                    <div key={idx} className="col-lg-3 col-md-6">
-                                        <div
-                                            className="border rounded-3 p-3 h-100 d-flex flex-column justify-content-between"
-                                            style={{ cursor: 'pointer', background: '#fff' }}
-                                            onClick={() => handleServiceClick(service._id)}
-                                        >
-                                            <div>
-                                                <div className="fw-semibold mb-1" style={{ fontSize: '14px', lineHeight: 1.4 }}>{service.subcategory?.name || service.name}</div>
-                                                <div className="text-muted" style={{ fontSize: '12px', lineHeight: 1.5 }}>
-                                                    {service.description ? service.description.slice(0, 60) + (service.description.length > 60 ? '.' : '') : 'Strategic growth solutions for your enterprise.'}
-                                                </div>
-                                            </div>
-                                            <div className="d-flex align-items-center justify-content-between mt-3 pt-3 border-top">
-                                                <div>
-                                                    <div className="text-muted" style={{ fontSize: '11px' }}>Standard Package</div>
-                                                    <div style={{ fontSize: '13px' }}>Starts From <span className="fw-bold">{service.price}</span></div>
-                                                </div>
-                                                <button
-                                                    className="btn p-2 rounded-2"
-                                                    style={{ background: '#f5f5f5', border: 'none' }}
-                                                    onClick={(e) => { e.stopPropagation(); handleBookNow(service._id, e); }}
-                                                >
-                                                    <FaPhone size={14} className="text-dark" />
-                                                </button>
-                                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                                {cat.subcategories.slice(0, 4).map((sub, idx) => (
+                                    <div key={idx} onClick={() => navigate(`/services?subcategory=${sub._id}`)} style={{ cursor: 'pointer', minWidth: 0 }}>
+                                        <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
+                                            {sub.image ? (
+                                                <img src={resolveCategoryImage(sub.image)} alt={sub.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                            ) : (
+                                                <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaUser size={40} className="text-muted" /></div>
+                                            )}
+                                        </div>
+                                        <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{sub.name}</div>
+                                        <div className="d-flex align-items-center gap-2">
+                                            <span className="fw-bold">₹{sub.startingFromPrice}</span>
                                         </div>
                                     </div>
                                 ))}
@@ -737,7 +707,43 @@ const Home = () => {
                         </div>
                     </section>
                 );
-            })}
+            })()}
+
+            {/* Transportation */}
+            {(() => {
+                const cat = getCategoryByName('Transportation'); if (!cat) return null; return (
+                    <section className="py-5 bg-white">
+                        <div className="container">
+                            <div className="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h2 className="fw-bold mb-1">{cat.name}</h2>
+                                    <p className="text-muted small mb-0">Safe and reliable ride services</p>
+                                </div>
+                                <button onClick={() => navigate(`/services?category=${cat.id}`)} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See all</button>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                                {cat.subcategories.slice(0, 4).map((sub, idx) => (
+                                    <div key={idx} onClick={() => navigate(`/services?subcategory=${sub._id}`)} style={{ cursor: 'pointer', minWidth: 0 }}>
+                                        <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
+                                            {sub.image ? (
+                                                <img src={resolveCategoryImage(sub.image)} alt={sub.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                            ) : (
+                                                <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaCar size={40} className="text-muted" /></div>
+                                            )}
+                                        </div>
+                                        <div className="fw-semibold text-dark mb-1" style={{ fontSize: '15px' }}>{sub.name}</div>
+                                        <div className="d-flex align-items-center gap-2">
+                                            <span className="fw-bold">₹{sub.startingFromPrice}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                );
+            })()}
+
+
 
             {/* All Home Services Banner */}
             <section className="py-5 bg-white">
@@ -807,12 +813,11 @@ const Home = () => {
                             style={{ overflowX: 'auto', scrollbarWidth: 'none', scrollBehavior: 'smooth' }}
                         >
                             {[
-                                { badge: 'UP TO ₹500 OFF', title: 'Home Cleaning', desc: 'Deep Cleaning. Sofa Cleaning. Spotless Spaces.', img: 'cleaning-offer.jpg', category: 'Cleaning' },
-                                { badge: 'SAME DAY SERVICE', title: 'Plumbing', desc: 'Leak Repairs. Pipe Installation. Water Solutions.', img: 'plumbing-offer.jpg', category: 'Plumbing' },
-                                { badge: 'CERTIFIED EXPERTS', title: 'Electrical', desc: 'Switches. Wiring. Safe Installations.', img: 'electrical-offer.jpg', category: 'Electrical' },
-                                { badge: 'UP TO ₹300 OFF', title: 'Handyman', desc: 'Repairs. Installations. Fix Anything.', img: 'handyman-offer.jpg', category: 'Handyman' },
-                                { badge: 'SAME DAY SERVICE', title: 'AC & Appliance', desc: 'AC Service. Appliance Repair. Quick Fix.', img: 'ac-offer.jpg', category: 'AC & Appliance' },
-                                { badge: 'CERTIFIED EXPERTS', title: 'Home Painting', desc: 'Interior. Exterior. Premium Finish.', img: 'painting-offer.jpg', category: 'Home Services' },
+                                { badge: 'UP TO ₹500 OFF', title: 'Home Cleaning', desc: 'Deep Cleaning. Sofa Cleaning. Spotless Spaces.', img: 'cleaning_image.png', category: 'Cleaning' },
+                                { badge: 'SAME DAY SERVICE', title: 'Plumbing', desc: 'Leak Repairs. Pipe Installation. Water Solutions.', img: 'plumbing_image.png', category: 'Plumbing' },
+                                { badge: 'CERTIFIED EXPERTS', title: 'Electrical', desc: 'Switches. Wiring. Safe Installations.', img: 'electrician.png', category: 'Electrical' },
+                                { badge: 'UP TO ₹300 OFF', title: 'Handyman', desc: 'Repairs. Installations. Fix Anything.', img: 'handy_man.png', category: 'Handyman' },
+                                { badge: 'SAME DAY SERVICE', title: 'AC & Appliance', desc: 'AC Service. Appliance Repair. Quick Fix.', img: 'ac_repair.png', category: 'AC & Appliance' },
                             ].map((item, idx) => (
                                 <div
                                     key={idx}
@@ -921,38 +926,37 @@ const Home = () => {
 
             {/* Marketing & Business Services - Dynamic from API */}
             {[
-                { category: 'Marketing', title: 'Marketing Services' },
-                { category: 'Consulting', title: 'Business and Consulting Services' },
-            ].map(({ category, title }) => {
-                const catServices = getCategoryServices(category);
-                // if (!catServices.length) return null;
+                { key: 'Marketing', subtitle: 'Digital marketing solutions for your brand' },
+                { key: 'Consulting', subtitle: 'Expert consulting for your business' },
+                { key: 'Professional', subtitle: 'Specialized professional services' },
+            ].map(({ key, subtitle }) => {
+                const cat = getCategoryByName(key);
+                if (!cat) return null;
                 return (
-                    <section key={category} className="py-5 bg-white">
+                    <section key={key} className="py-5 bg-white">
                         <div className="container">
                             <div className="d-flex justify-content-between align-items-center mb-4">
-                                <h2 className="fw-bold mb-0">{title}</h2>
-                                <button onClick={() => handleViewAllServices(category)} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See All</button>
+                                <h2 className="fw-bold mb-0">{cat.name}</h2>
+                                <button onClick={() => navigate(`/services?category=${cat.id}`)} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See All</button>
                             </div>
                             <div className="row g-3">
-                                {catServices.map((service, idx) => (
+                                {cat.subcategories.slice(0, 4).map((sub, idx) => (
                                     <div key={idx} className="col-lg-3 col-md-6">
                                         <div
                                             className="border rounded-3 p-3 h-100 d-flex flex-column justify-content-between"
                                             style={{ cursor: 'pointer', background: '#fff' }}
-                                            onClick={() => handleServiceClick(service._id)}
+                                            onClick={() => navigate(`/services?subcategory=${sub._id}`)}
                                         >
                                             <div>
-                                                <div className="fw-semibold mb-1" style={{ fontSize: '14px', lineHeight: 1.4 }}>{service.subcategory?.name || service.name}</div>
-                                                <div className="text-muted" style={{ fontSize: '12px', lineHeight: 1.5 }}>
-                                                    {service.description ? service.description.slice(0, 60) + (service.description.length > 60 ? '.' : '') : 'Strategic growth solutions for your enterprise.'}
-                                                </div>
+                                                <div className="fw-semibold mb-1" style={{ fontSize: '14px', lineHeight: 1.4 }}>{sub.name}</div>
+                                                <div className="text-muted" style={{ fontSize: '12px', lineHeight: 1.5 }}>{subtitle}</div>
                                             </div>
                                             <div className="d-flex align-items-center justify-content-between mt-3 pt-3 border-top">
                                                 <div>
                                                     <div className="text-muted" style={{ fontSize: '11px' }}>Standard Package</div>
-                                                    <div style={{ fontSize: '13px' }}>Starts From <span className="fw-bold">{service.price}</span></div>
+                                                    <div style={{ fontSize: '13px' }}>Starts From <span className="fw-bold">₹{sub.startingFromPrice}</span></div>
                                                 </div>
-                                                <button className="btn p-2 rounded-2" style={{ background: '#f5f5f5', border: 'none' }} onClick={(e) => { e.stopPropagation(); handleBookNow(service._id, e); }}>
+                                                <button className="btn p-2 rounded-2" style={{ background: '#f5f5f5', border: 'none' }}>
                                                     <FaPhone size={14} className="text-dark" />
                                                 </button>
                                             </div>
@@ -1004,41 +1008,36 @@ const Home = () => {
             </section>
 
             {/* Health & Wellness */}
-            <section className="py-5 bg-white">
-                <div className="container">
-                    <div className="d-flex justify-content-between align-items-start mb-4">
-                        <div>
-                            <h2 className="fw-bold mb-1">Health &amp; Wellness</h2>
-                            <p className="text-muted small mb-0">Holistic care for your body and mind</p>
-                        </div>
-                        <button onClick={() => handleViewAllServices('Health & Wellness')} className="btn btn-link text-success fw-semibold text-decoration-none p-0" style={{ fontSize: '13px' }}>See all &rsaquo;</button>
-                    </div>
-                    <div className="row g-4">
-                        {getCategoryServices('Health & Wellness').map((service, idx) => (
-                            <div key={idx} onClick={() => handleServiceClick(service._id)} className="col-lg-4 col-md-6" style={{ cursor: 'pointer' }}>
-                                <div className="rounded-4 overflow-hidden mb-3 position-relative" style={{ height: '220px', background: '#f0f0f0' }}>
-                                    {service.imageUrl ? (
-                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
-                                    ) : (
-                                        <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaHeartbeat size={40} className="text-muted" /></div>
-                                    )}
-                                    {service.badge && (
-                                        <span className="position-absolute top-0 start-0 m-2 px-2 py-1 rounded-2 fw-semibold" style={{ background: '#fff', fontSize: '11px' }}>{service.badge}</span>
-                                    )}
+            {(() => {
+                const cat = getCategoryByName('Health'); if (!cat) return null; return (
+                    <section className="py-5 bg-white">
+                        <div className="container">
+                            <div className="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h2 className="fw-bold mb-1">{cat.name}</h2>
+                                    <p className="text-muted small mb-0">Holistic care for your body and mind</p>
                                 </div>
-                                <div className="d-flex align-items-center justify-content-between mb-1">
-                                    <div className="fw-bold" style={{ fontSize: '15px' }}>{service.subcategory?.name || service.name}</div>
-                                    <div className="d-flex align-items-center gap-1">
-                                        <FaStar style={{ color: '#f5a623', fontSize: '12px' }} />
-                                        <span className="small fw-semibold">{service.ratingsAverage || 4.8}</span>
-                                    </div>
-                                </div>
-                                <div className="text-muted small">Starts at ₹{service.price}</div>
+                                <button onClick={() => navigate(`/services?category=${cat.id}`)} className="btn btn-link text-success fw-semibold text-decoration-none p-0" style={{ fontSize: '13px' }}>See all &rsaquo;</button>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+                            <div className="row g-4">
+                                {cat.subcategories.slice(0, 3).map((sub, idx) => (
+                                    <div key={idx} onClick={() => navigate(`/services?subcategory=${sub._id}`)} className="col-lg-4 col-md-6" style={{ cursor: 'pointer' }}>
+                                        <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
+                                            {sub.image ? (
+                                                <img src={resolveCategoryImage(sub.image)} alt={sub.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                            ) : (
+                                                <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaHeartbeat size={40} className="text-muted" /></div>
+                                            )}
+                                        </div>
+                                        <div className="fw-bold mb-1" style={{ fontSize: '15px' }}>{sub.name}</div>
+                                        <div className="text-muted small">Starts at ₹{sub.startingFromPrice}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                );
+            })()}
 
             {/* Accounting & Finance Banner */}
             <section className="py-5 bg-white">
@@ -1067,83 +1066,37 @@ const Home = () => {
             </section>
 
             {/* Accounting and Finance Services */}
-            <section className="py-5 bg-white">
-                <div className="container">
-                    <div className="d-flex justify-content-between align-items-start mb-4">
-                        <div>
-                            <h2 className="fw-bold mb-1">Accounting &amp; Finance Services</h2>
-                            <p className="text-muted small mb-0">Manage your business finances with confidence.</p>
-                        </div>
-                        <button onClick={() => handleViewAllServices('Accounting and Finance')} className="btn btn-link text-success fw-semibold text-decoration-none p-0" style={{ fontSize: '13px' }}>See all &rsaquo;</button>
-                    </div>
-                    <div className="row g-3">
-                        {getCategoryServices('Accounting and Finance').map((service, idx) => (
-                            <div key={idx} onClick={() => handleServiceClick(service._id)} className="col-lg-3 col-md-6" style={{ cursor: 'pointer' }}>
-                                <div className="rounded-4 overflow-hidden mb-3 position-relative" style={{ height: '220px', background: '#f0f0f0' }}>
-                                    {service.imageUrl ? (
-                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
-                                    ) : (
-                                        <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaHeartbeat size={40} className="text-muted" /></div>
-                                    )}
-                                    {service.badge && (
-                                        <span className="position-absolute top-0 start-0 m-2 px-2 py-1 rounded-2 fw-semibold" style={{ background: '#fff', fontSize: '11px' }}>{service.badge}</span>
-                                    )}
+            {(() => {
+                const cat = getCategoryByName('Accounting'); if (!cat) return null; return (
+                    <section className="py-5 bg-white">
+                        <div className="container">
+                            <div className="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h2 className="fw-bold mb-1">{cat.name}</h2>
+                                    <p className="text-muted small mb-0">Manage your business finances with confidence.</p>
                                 </div>
-                                <div className="d-flex align-items-center justify-content-between mb-1">
-                                    <div className="fw-bold" style={{ fontSize: '15px' }}>{service.subcategory?.name || service.name}</div>
-                                    <div className="d-flex align-items-center gap-1">
-                                        <FaStar style={{ color: '#f5a623', fontSize: '12px' }} />
-                                        <span className="small fw-semibold">{service.ratingsAverage || 4.8}</span>
-                                    </div>
-                                </div>
-                                <div className="text-muted small">Starts at ₹{service.price}</div>
+                                <button onClick={() => navigate(`/services?category=${cat.id}`)} className="btn btn-link text-success fw-semibold text-decoration-none p-0" style={{ fontSize: '13px' }}>See all &rsaquo;</button>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-
-
-
-
-            {/* Professional Services Section */}
-            <section className="py-5 bg-white">
-                <div className="container">
-                    <div className="d-flex justify-content-between align-items-center mb-4">
-                        <h2 className="fw-bold mb-0">Professional Services</h2>
-                        <button onClick={() => handleViewAllServices('Professional Services')} className="btn btn-link text-dark fw-semibold text-decoration-none p-0">See All</button>
-                    </div>
-                    <div className="row g-3">
-                        <div className="col-lg-7">
-                            <div className="rounded-4 overflow-hidden position-relative" style={{ minHeight: '385px', background: '#1a1a2e', cursor: 'pointer' }} onClick={() => handleCategoryClick('Professional Services')}>
-                                <img src={tryHeroImg('professional.png')} alt="Professional Services" className="position-absolute w-100 h-100" style={{ objectFit: 'cover', top: 0, left: 0, opacity: 0.6 }} onError={(e) => { e.target.style.display = 'none'; }} />
-                                <div className="position-relative p-4 d-flex flex-column justify-content-end" style={{ minHeight: '300px' }}>
-                                    <span className="fw-bold text-white px-2 py-1 rounded-2 mb-3 d-inline-block" style={{ background: '#7c3aed', fontSize: '10px', width: 'fit-content' }}>Top Rated</span>
-                                    <h4 className="fw-bold text-white mb-2">HR Services ( IT &amp; Non-It )</h4>
-                                    <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '13px' }}>Build your dream team with our expert HR teams.</p>
-                                    <button className="btn btn-light fw-semibold rounded-3 px-4 py-2 mt-2" style={{ width: 'fit-content' }} onClick={(e) => { e.stopPropagation(); handleCategoryClick('Professional Services'); }}>Get a Quote</button>
-                                </div>
+                            <div className="row g-3">
+                                {cat.subcategories.slice(0, 4).map((sub, idx) => (
+                                    <div key={idx} onClick={() => navigate(`/services?subcategory=${sub._id}`)} className="col-lg-3 col-md-6" style={{ cursor: 'pointer' }}>
+                                        <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
+                                            {sub.image ? (
+                                                <img src={resolveCategoryImage(sub.image)} alt={sub.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                                            ) : (
+                                                <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaChartBar size={40} className="text-muted" /></div>
+                                            )}
+                                        </div>
+                                        <div className="fw-bold mb-1" style={{ fontSize: '15px' }}>{sub.name}</div>
+                                        <div className="text-muted small">Starts at ₹{sub.startingFromPrice}</div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                        <div className="col-lg-5 d-flex flex-column gap-3">
-                            {[
-                                { icon: <FaUserMd size={20} />, title: 'Legal Services', desc: 'Get legal advice from top expert consultants' },
-                                { icon: <FaPhone size={20} />, title: 'Translation Services', desc: '24/7 translation assistance in multiple languages.' },
-                            ].map((item, idx) => (
-                                <div key={idx} className="rounded-4 border p-4 d-flex flex-column justify-content-between flex-grow-1" style={{ cursor: 'pointer' }} onClick={() => handleCategoryClick('Professional Services')}>
-                                    <div>
-                                        <div className="mb-3 text-dark">{item.icon}</div>
-                                        <div className="fw-bold mb-1" style={{ fontSize: '15px' }}>{item.title}</div>
-                                        <div className="text-muted small mb-3">{item.desc}</div>
-                                    </div>
-                                    <button className="btn btn-dark btn-sm rounded-3 px-3" style={{ width: 'fit-content' }} onClick={(e) => { e.stopPropagation(); handleCategoryClick('Professional Services'); }}>Contact now</button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
+                    </section>
+                );
+            })()}
+
 
             {/* Education Section */}
             <section className="py-5 bg-white">
@@ -1248,41 +1201,36 @@ const Home = () => {
             </section>
 
             {/* Our Expertise Services */}
-            <section className="py-5 bg-white">
-                <div className="container">
-                    <div className="d-flex justify-content-between align-items-start mb-4">
-                        <div>
-                            <h2 className="fw-bold mb-1">Our Expertise</h2>
-                            <p className="text-muted small mb-0">Select a specialized service for your next event.</p>
-                        </div>
-                        <button onClick={() => handleViewAllServices('Expertise')} className="btn btn-link text-success fw-semibold text-decoration-none p-0" style={{ fontSize: '13px' }}>See all &rsaquo;</button>
-                    </div>
-                    <div className="row g-3">
-                        {getCategoryServices('Expertise').map((service, idx) => (
-                            <div key={idx} onClick={() => handleServiceClick(service._id)} className="col-lg-3 col-md-6" style={{ cursor: 'pointer' }}>
-                                <div className="rounded-4 overflow-hidden mb-3 position-relative" style={{ height: '220px', background: '#f0f0f0' }}>
-                                    {service.imageUrl ? (
-                                        <img src={resolveImageUrl(service.imageUrl)} alt={service.subcategory} className="w-100 h-100" style={{ objectFit: 'cover' }} />
-                                    ) : (
-                                        <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaHeartbeat size={40} className="text-muted" /></div>
-                                    )}
-                                    {service.badge && (
-                                        <span className="position-absolute top-0 start-0 m-2 px-2 py-1 rounded-2 fw-semibold" style={{ background: '#fff', fontSize: '11px' }}>{service.badge}</span>
-                                    )}
+            {(() => {
+                const cat = getCategoryByName('Event'); if (!cat) return null; return (
+                    <section className="py-5 bg-white">
+                        <div className="container">
+                            <div className="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h2 className="fw-bold mb-1">Our Expertise</h2>
+                                    <p className="text-muted small mb-0">Select a specialized service for your next event.</p>
                                 </div>
-                                <div className="d-flex align-items-center justify-content-between mb-1">
-                                    <div className="fw-bold" style={{ fontSize: '15px' }}>{service.subcategory?.name || service.name}</div>
-                                    <div className="d-flex align-items-center gap-1">
-                                        <FaStar style={{ color: '#f5a623', fontSize: '12px' }} />
-                                        <span className="small fw-semibold">{service.ratingsAverage || 4.8}</span>
-                                    </div>
-                                </div>
-                                <div className="text-muted small">Starts at ₹{service.price}</div>
+                                <button onClick={() => navigate(`/services?category=${cat.id}`)} className="btn btn-link text-success fw-semibold text-decoration-none p-0" style={{ fontSize: '13px' }}>See all &rsaquo;</button>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+                            <div className="row g-3">
+                                {cat.subcategories.slice(0, 4).map((sub, idx) => (
+                                    <div key={idx} onClick={() => navigate(`/services?subcategory=${sub._id}`)} className="col-lg-3 col-md-6" style={{ cursor: 'pointer' }}>
+                                        <div className="rounded-4 overflow-hidden mb-3" style={{ height: '220px', background: '#f0f0f0' }}>
+                                            {sub.image ? (
+                                                <img src={resolveCategoryImage(sub.image)} alt={sub.name} className="w-100 h-100" style={{ objectFit: 'contain' }} />
+                                            ) : (
+                                                <div className="w-100 h-100 d-flex align-items-center justify-content-center"><FaCamera size={40} className="text-muted" /></div>
+                                            )}
+                                        </div>
+                                        <div className="fw-bold mb-1" style={{ fontSize: '15px' }}>{sub.name}</div>
+                                        <div className="text-muted small">Starts at ₹{sub.startingFromPrice}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                );
+            })()}
 
 
 
@@ -1317,14 +1265,16 @@ const Home = () => {
             <section
                 className="py-5"
                 style={{
-                    background: "#f8f4ec",
+                    background: "#fff",
                     overflow: "hidden",
                 }}
             >
                 <div className="container">
                     <div
                         className="position-relative d-flex justify-content-center align-items-start"
-                        style={{ minHeight: "500px" }}
+                        style={{
+                            minHeight: "500px",
+                        }}
                     >
                         {/* Background ONE APP */}
                         <div
@@ -1366,63 +1316,87 @@ const Home = () => {
                             </div>
                         </div>
 
-                        {/* Black Card */}
+                        {/* Card Wrapper */}
                         <div
-                            className="position-relative text-center px-5 py-5 rounded-4"
+                            className="position-relative"
                             style={{
-                                background: "#0d0d0d",
                                 width: "100%",
-                                maxWidth: "950px",
+                                maxWidth: "1500px",
                                 zIndex: 2,
-                                boxShadow: "0 18px 35px rgba(0,0,0,.25)",
                             }}
                         >
+                            {/* White Blur / Glow */}
                             <div
                                 style={{
-                                    color: "#fff",
-                                    fontSize: "22px",
-                                    opacity: 0.8,
-                                    lineHeight: 1,
+                                    position: "absolute",
+                                    left: "50%",
+                                    bottom: "-55px",
+                                    transform: "translateX(-50%)",
+                                    width: "88%",
+                                    height: "120px",
+                                    background: "rgba(255,255,255,0.95)",
+                                    filter: "blur(55px)",
+                                    borderRadius: "100px",
+                                    zIndex: -1,
+                                }}
+                            />
+
+                            {/* Black Card */}
+                            <div
+                                className="text-center rounded-4"
+                                style={{
+                                    background: "#0d0d0d",
+                                    padding: "30px 20px",
+                                    borderRadius: "24px",
+                                    boxShadow: "0px 0px 20px 20px rgba(0, 0, 0, .28)",
                                 }}
                             >
-                                ❝
+                                <div
+                                    style={{
+                                        color: "#fff",
+                                        fontSize: "28px",
+                                        opacity: 0.9,
+                                        lineHeight: 1,
+                                    }}
+                                >
+                                    ❝
+                                </div>
+
+                                <h2
+                                    className="mb-4"
+                                    style={{
+                                        color: "#fff",
+                                        fontFamily: "Georgia, serif",
+                                        fontStyle: "italic",
+                                        fontWeight: 400,
+                                        fontSize: "clamp(30px,3vw,52px)",
+                                    }}
+                                >
+                                    "Stay Tuned For More"
+                                </h2>
+
+                                <p
+                                    className="mb-1"
+                                    style={{
+                                        color: "#d8d8d8",
+                                        fontSize: "16px",
+                                    }}
+                                >
+                                    We're continuously expanding our service networking to deliver
+                                </p>
+
+                                <p
+                                    style={{
+                                        color: "#67d36b",
+                                        fontStyle: "italic",
+                                        fontWeight: 600,
+                                        fontSize: "16px",
+                                        margin: 0,
+                                    }}
+                                >
+                                    more value, more expertise and more possibilities.
+                                </p>
                             </div>
-
-                            <h2
-                                className="mb-3"
-                                style={{
-                                    color: "#fff",
-                                    fontFamily: "Georgia, serif",
-                                    fontStyle: "italic",
-                                    fontWeight: 400,
-                                    fontSize: "clamp(28px,3vw,42px)",
-                                }}
-                            >
-                                “Stay Tuned For More”
-                            </h2>
-
-                            <p
-                                className="mb-1"
-                                style={{
-                                    color: "#d8d8d8",
-                                    fontSize: "14px",
-                                }}
-                            >
-                                We're continuously expanding our service networking to
-                                deliver
-                            </p>
-
-                            <p
-                                style={{
-                                    color: "#67d36b",
-                                    fontStyle: "italic",
-                                    fontWeight: 600,
-                                    fontSize: "14px",
-                                    margin: 0,
-                                }}
-                            >
-                                more value, more expertise and more possibilities.
-                            </p>
                         </div>
                     </div>
                 </div>

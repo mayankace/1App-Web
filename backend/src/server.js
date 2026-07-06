@@ -12,6 +12,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
+const slotsRoutes = require('./routes/slotsRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const Service = require('./models/Service');
 
@@ -87,6 +88,7 @@ app.use(xssProtection);
 app.use('/api/auth', authRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/slots', slotsRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Health check

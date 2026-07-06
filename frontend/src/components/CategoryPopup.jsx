@@ -126,7 +126,7 @@ const CategoryPopup = ({ category, categoryId, subcategories, onClose }) => {
                                 }}>
                                     {sub.image ? (
                                         <img
-                                            src={resolveSubcategoryImage(sub.image)}
+                                            src={resolveSubcategoryImage(sub.icon)}
                                             alt={sub.name}
                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                         />
