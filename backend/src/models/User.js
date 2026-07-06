@@ -17,14 +17,15 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: [true, 'Please provide a password'],
+        required: function() { return !this.googleId; },
         minlength: [6, 'Password must be at least 6 characters long'],
         select: false
     },
     phone: {
         type: String,
-        required: [true, 'Please provide a phone number'],
+        required: function() { return !this.googleId; },
         unique: true,
+        sparse: true,
         trim: true
     },
     address: {
@@ -39,6 +40,14 @@ const userSchema = new mongoose.Schema({
     isPhoneVerified: {
         type: Boolean,
         default: false
+    },
+    googleId: {
+        type: String,
+        default: null
+    },
+    avatar: {
+        type: String,
+        default: ''
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date

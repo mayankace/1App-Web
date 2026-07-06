@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import adminApi from '../services/adminApi';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { FaPlus, FaEdit, FaTrash, FaFolder, FaImage, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
@@ -14,10 +14,14 @@ const CategoryManagement = () => {
     const [subcategoryName, setSubcategoryName] = useState('');
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [iconFile, setIconFile] = useState(null);
+    const [iconPreview, setIconPreview] = useState(null);
     const [startingFromPrice, setStartingFromPrice] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortOrder, setSortOrder] = useState('asc');
+    const formRef = useRef(null);
+    const editingRowRef = useRef(null);
 
     const fetchData = async () => {
         setLoading(true);
@@ -43,6 +47,8 @@ const CategoryManagement = () => {
         setSubcategoryName('');
         setImageFile(null);
         setImagePreview(null);
+        setIconFile(null);
+        setIconPreview(null);
         setStartingFromPrice('');
         setShowForm(true);
     };
@@ -53,8 +59,11 @@ const CategoryManagement = () => {
         setSubcategoryName(sub.name);
         setImageFile(null);
         setImagePreview(sub.image ? `${process.env.REACT_IMAGE_URL || 'http://localhost:5000'}/uploads/${sub.image}` : null);
+        setIconFile(null);
+        setIconPreview(sub.icon ? `${process.env.REACT_IMAGE_URL || 'http://localhost:5000'}/uploads/${sub.icon}` : null);
         setStartingFromPrice(sub.startingFromPrice?.toString() || '');
         setShowForm(true);
+        setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     };
 
     const handleImageChange = (e) => {
@@ -62,9 +71,17 @@ const CategoryManagement = () => {
         if (file) {
             setImageFile(file);
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-            };
+            reader.onloadend = () => setImagePreview(reader.result);
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleIconChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setIconFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setIconPreview(reader.result);
             reader.readAsDataURL(file);
         }
     };
@@ -89,9 +106,8 @@ const CategoryManagement = () => {
             formData.append('name', subcategoryName);
             formData.append('categoryId', selectedCategoryId);
             if (startingFromPrice) formData.append('startingFromPrice', startingFromPrice);
-            if (imageFile) {
-                formData.append('image', imageFile);
-            }
+            if (imageFile) formData.append('image', imageFile);
+            if (iconFile) formData.append('icon', iconFile);
 
             let res;
             if (editingId) {
@@ -102,7 +118,10 @@ const CategoryManagement = () => {
                 if (res.success) toast.success('SubCategory created!');
             }
             setShowForm(false);
-            fetchData();
+            await fetchData();
+            if (editingId) {
+                setTimeout(() => editingRowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+            }
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to save subcategory');
         } finally {
@@ -139,7 +158,7 @@ const CategoryManagement = () => {
             </div>
 
             {showForm && (
-                <div className="card border-0 shadow-sm rounded-3 bg-white p-4 mb-4">
+                <div ref={formRef} className="card border-0 shadow-sm rounded-3 bg-white p-4 mb-4">
                     <h5 className="fw-bold mb-4 border-bottom pb-2">
                         {editingId ? 'Edit Sub-Category' : 'Create New Sub-Category'}
                     </h5>
@@ -181,7 +200,7 @@ const CategoryManagement = () => {
                                     onChange={(e) => setStartingFromPrice(e.target.value)}
                                 />
                             </div>
-                            <div className="col-md-12">
+                            <div className="col-md-6">
                                 <label className="form-label text-muted small fw-bold">Upload Image</label>
                                 <input
                                     type="file"
@@ -189,15 +208,23 @@ const CategoryManagement = () => {
                                     className="form-control bg-light border-0"
                                     onChange={handleImageChange}
                                 />
+                                {imagePreview && (
+                                    <img src={imagePreview} alt="Preview" className="img-thumbnail mt-2" style={{ maxWidth: '80px' }} />
+                                )}
+                            </div>
+                            <div className="col-md-6">
+                                <label className="form-label text-muted small fw-bold">Upload Icon</label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="form-control bg-light border-0"
+                                    onChange={handleIconChange}
+                                />
+                                {iconPreview && (
+                                    <img src={iconPreview} alt="Icon Preview" className="img-thumbnail mt-2" style={{ maxWidth: '80px' }} />
+                                )}
                             </div>
                         </div>
-
-                        {imagePreview && (
-                            <div className="mb-4">
-                                <label className="text-muted small fw-bold d-block mb-2">Image Preview:</label>
-                                <img src={imagePreview} alt="Preview" className="img-thumbnail" style={{ maxWidth: '150px' }} />
-                            </div>
-                        )}
 
                         <div className="d-flex gap-2 justify-content-end">
                             <button type="button" onClick={() => setShowForm(false)} className="btn btn-outline-secondary px-4 py-2">Cancel</button>
@@ -244,6 +271,7 @@ const CategoryManagement = () => {
                             <thead className="table-light border-0">
                                 <tr>
                                     <th>Image</th>
+                                    <th>Icon</th>
                                     <th>Category</th>
                                     <th>Sub-Category</th>
                                     <th>Starting Price</th>
@@ -253,7 +281,7 @@ const CategoryManagement = () => {
                             </thead>
                             <tbody>
                                 {filteredSubcategories.map((sub) => (
-                                    <tr key={sub._id}>
+                                    <tr key={sub._id} ref={sub._id === editingId ? editingRowRef : null}>
                                         <td>
                                             {sub.image ? (
                                                 <img 
@@ -266,6 +294,21 @@ const CategoryManagement = () => {
                                             ) : (
                                                 <div className="bg-light text-muted d-flex align-items-center justify-content-center" style={{ width: '50px', height: '50px' }}>
                                                     <FaImage size={16} />
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {sub.icon ? (
+                                                <img
+                                                    src={`${process.env.REACT_IMAGE_URL || 'http://localhost:5000'}/uploads/${sub.icon}`}
+                                                    alt={`${sub.name} icon`}
+                                                    className="img-thumbnail"
+                                                    style={{ maxWidth: '40px' }}
+                                                    onError={(e) => { e.target.src = 'https://via.placeholder.com/40'; }}
+                                                />
+                                            ) : (
+                                                <div className="bg-light text-muted d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
+                                                    <FaImage size={12} />
                                                 </div>
                                             )}
                                         </td>
@@ -292,7 +335,7 @@ const CategoryManagement = () => {
                                     </tr>
                                 ))}
                                 {filteredSubcategories.length === 0 && (
-                                    <tr><td colSpan="6" className="text-center py-5 text-muted">No sub-categories found. Create your first sub-category!</td></tr>
+                                    <tr><td colSpan="7" className="text-center py-5 text-muted">No sub-categories found. Create your first sub-category!</td></tr>
                                 )}
                             </tbody>
                         </table>

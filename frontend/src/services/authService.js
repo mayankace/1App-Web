@@ -21,6 +21,14 @@ const authService = {
         return response.data;
     },
 
+    googleAuth: async ({ googleId, email, name, avatar }) => {
+        const response = await API.post('/auth/google', { googleId, email, name, avatar });
+        if (response.data.token) {
+            localStorage.setItem('vmarc_token', response.data.token);
+        }
+        return response.data;
+    },
+
     logout: () => {
         localStorage.removeItem('vmarc_token');
     },
