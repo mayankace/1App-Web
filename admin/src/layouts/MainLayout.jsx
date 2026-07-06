@@ -34,8 +34,8 @@ const MainLayout = () => {
                 <div className="p-4 border-bottom d-flex align-items-center gap-2">
                     <FaTools className="text-dark" size={24} />
                     <div>
-                        <h5 className="fw-bold mb-0 text-white font-monospace">vmarc</h5>
-                        <small className="text-muted tracking-wider text-uppercase font-monospace fs-8">Admin Control</small>
+                        <h5 className="fw-bold mb-0 text-white font-monospace">1APP</h5>
+                        <small className=" text-white tracking-wider text-uppercase font-monospace fs-8">Admin Control</small>
                     </div>
                 </div>
 

@@ -20,7 +20,7 @@ exports.getCategoriesWithRecentSubCategories = async (req, res, next) => {
                     category: category._id,
                     isActive: true
                 })
-                .select('name image startingFromPrice')
+                .select('name image startingFromPrice icon')
                 .sort({ createdAt: -1 }) // Latest first
                 .limit(4);
 
@@ -28,6 +28,7 @@ exports.getCategoriesWithRecentSubCategories = async (req, res, next) => {
                     id: category._id,
                     name: category.name,
                     image: category.image,
+                    icon: category.icon,
                     subcategories
                 };
             })
@@ -90,7 +91,8 @@ exports.getAllSubCategories = async (req, res, next) => {
 exports.createSubCategory = async (req, res, next) => {
     try {
         const data = { name: req.body.name, category: req.body.categoryId };
-        if (req.file) data.image = req.file.filename;
+        if (req.files?.image?.[0]) data.image = req.files.image[0].filename;
+        if (req.files?.icon?.[0]) data.icon = req.files.icon[0].filename;
         if (req.body.startingFromPrice) data.startingFromPrice = parseFloat(req.body.startingFromPrice);
         const created = await SubCategory.create(data);
         const subcategory = await SubCategory.findById(created._id).populate('category', 'name');
@@ -103,7 +105,8 @@ exports.updateSubCategory = async (req, res, next) => {
         const update = {};
         if (req.body.name) update.name = req.body.name;
         if (req.body.categoryId) update.category = req.body.categoryId;
-        if (req.file) update.image = req.file.filename;
+        if (req.files?.image?.[0]) update.image = req.files.image[0].filename;
+        if (req.files?.icon?.[0]) update.icon = req.files.icon[0].filename;
         if (req.body.startingFromPrice !== undefined) update.startingFromPrice = parseFloat(req.body.startingFromPrice) || 0;
         const subcategory = await SubCategory.findByIdAndUpdate(req.params.id, update, { returnDocument: 'after', runValidators: true }).populate('category', 'name');
         if (!subcategory) return res.status(404).json({ success: false, message: 'SubCategory not found' });

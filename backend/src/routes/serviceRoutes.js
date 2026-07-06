@@ -13,13 +13,15 @@ router.post('/categories', protect, restrictTo('admin'), upload.single('image'),
 router.put('/categories/:id', protect, restrictTo('admin'), upload.single('image'), categoryController.updateCategory);
 router.delete('/categories/:id', protect, restrictTo('admin'), categoryController.deleteCategory);
 
+const uploadSubCategory = upload.fields([{ name: 'image', maxCount: 1 }, { name: 'icon', maxCount: 1 }]);
+
 // ─── SUBCATEGORY ──────────────────────────────────────────────────────────────
 router.get('/subcategories', categoryController.getAllSubCategories);
 router.get('/categories/:id/subcategories', categoryController.getSubCategoriesByCategory);
 router.get('/subcategories/:id/services', categoryController.getServicesBySubCategory);
 router.get('/subcategory/:subcategory', serviceController.getServicesBySubcategory);
-router.post('/subcategories', protect, restrictTo('admin'), upload.single('image'), categoryController.createSubCategory);
-router.put('/subcategories/:id', protect, restrictTo('admin'), upload.single('image'), categoryController.updateSubCategory);
+router.post('/subcategories', protect, restrictTo('admin'), uploadSubCategory, categoryController.createSubCategory);
+router.put('/subcategories/:id', protect, restrictTo('admin'), uploadSubCategory, categoryController.updateSubCategory);
 router.delete('/subcategories/:id', protect, restrictTo('admin'), categoryController.deleteSubCategory);
 
 // ─── SERVICES ─────────────────────────────────────────────────────────────────

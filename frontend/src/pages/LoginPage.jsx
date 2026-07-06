@@ -19,7 +19,7 @@ const GoogleIcon = () => (
 );
 
 const LoginPage = () => {
-    const { login, isAuthenticated, loading } = useContext(AuthContext);
+    const { login, googleLogin: googleAuthLogin, isAuthenticated, loading } = useContext(AuthContext);
     const navigate = useNavigate();
     const location = useLocation();
     const fromPath = location.state?.from?.pathname || '/';
@@ -49,7 +49,7 @@ const LoginPage = () => {
                 const { data } = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
                     headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
                 });
-                await login(data.email, data.sub, { googleId: data.sub, name: data.name, picture: data.picture });
+                await googleAuthLogin({ googleId: data.sub, email: data.email, name: data.name, avatar: data.picture });
                 toast.success('Logged in with Google!');
             } catch { toast.error('Google login failed'); }
         },

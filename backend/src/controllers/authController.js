@@ -26,6 +26,36 @@ const sendTokenResponse = (user, statusCode, res) => {
 };
 
 /**
+ * @desc    Google OAuth - find or create user
+ * @route   POST /api/auth/google
+ */
+exports.googleAuth = async (req, res, next) => {
+    try {
+        const { googleId, email, name, avatar } = req.body;
+        if (!googleId || !email) {
+            return res.status(400).json({ success: false, message: 'Google credentials missing' });
+        }
+
+        let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+        if (user) {
+            // Link googleId if user registered with email before
+            if (!user.googleId) {
+                user.googleId = googleId;
+                if (avatar) user.avatar = avatar;
+                await user.save();
+            }
+        } else {
+            user = await User.create({ name, email, googleId, avatar: avatar || '', role: 'user' });
+        }
+
+        sendTokenResponse(user, 200, res);
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
  * @desc    Register a new user
  * @route   POST /api/auth/register
  */

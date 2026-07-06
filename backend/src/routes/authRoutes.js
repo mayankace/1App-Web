@@ -7,6 +7,7 @@ const { validateRegister, validateLogin } = require('../middleware/validation');
 // Public routes
 router.post('/register', validateRegister, authController.register);
 router.post('/login', validateLogin, authController.login);
+router.post('/google', authController.googleAuth);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
 
